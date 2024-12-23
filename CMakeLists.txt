@@ -1,0 +1,3 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+PROJECT(pochodzka)
+ADD_EXECUTABLE(pochodzka main.c)
