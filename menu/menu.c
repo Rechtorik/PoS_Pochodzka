@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "inputStruktura.c"
+#include "../common/inputStruktura.c"
 
 // Deklarácie funkcií
 void novaSimulacia(Input* input);
@@ -78,26 +78,26 @@ void novaSimulacia(Input* input) {
 
   if(choice2 == 1) {
     // GENEROVANA MAPA
-    input->mapaSubor = NULL;
+    //input->mapaSubor = NULL;
     simulaciaForm(input);
   } else if(choice2 == 2) {
     // MAPA ZO SUBORU
-    char* buffer = malloc(sizeof(char)*256); // tu sa ulozi cesta k suboru
+    //char* buffer = malloc(sizeof(char)*256); // tu sa ulozi cesta k suboru
     system("clear");
     // Zobrazenie menu
     printf("\n========== MENU ==========\n");
-    printf("Zadajte cestu k súboru s mapou: ");
+    printf("Zadajte názov mapy (.txt): ");
     while (getchar() != '\n'); // Vyčistenie bufferu
 
     // Čítanie reťazca
-    if (fgets(buffer, 256, stdin) == NULL) {
+    if (fgets(input->mapaSubor, 256, stdin) == NULL) {
       printf("Chyba pri čítaní vstupu.\n");
     }
 
     //printf("%d\n", strcspn(buffer, "\n"));
     // Odstránenie znaku nového riadku (ak existuje)
-    buffer[strcspn(buffer, "\n")] = '\0';
-    input->mapaSubor = buffer;
+    input->mapaSubor[strcspn(input->mapaSubor, "\n")] = '\0';
+    //input->mapaSubor = buffer;
     simulaciaForm(input);
   }
 }
@@ -132,7 +132,7 @@ void simulaciaForm(Input* input) {
   int k;
   int pocetReplikacii;
   int pripojenie;
-  char* suborUlozenia = malloc(sizeof(char)*256);
+  //char* suborUlozenia = malloc(sizeof(char)*256);
 
   
   system("clear");
@@ -257,18 +257,18 @@ void simulaciaForm(Input* input) {
   system("clear");
   // subor ulozenia
   printf("\n========== MENU ==========\n");
-  printf("Zadajte cestu k súboru ulozenia simulacie: ");
+  printf("Zadajte názov simulacie (.txt): ");
   while (getchar() != '\n'); // Vyčistenie bufferu
 
   // Čítanie reťazca
-  if (fgets(suborUlozenia, 256, stdin) == NULL) {
+  if (fgets(input->suborUlozenia, 256, stdin) == NULL) {
     printf("Chyba pri čítaní vstupu.\n");
   }
   system("clear");
   
   //printf("%d\n", strcspn(suborUlozenia, "\n"));
   // Odstránenie znaku nového riadku (ak existuje)
-  suborUlozenia[strcspn(suborUlozenia, "\n")] = '\0';
+  input->suborUlozenia[strcspn(input->suborUlozenia, "\n")] = '\0';
 
   // Tu mám všetky premenné načítané, teraz ich uložiť do štruktúry
   input->maxX = maxX;
@@ -279,31 +279,31 @@ void simulaciaForm(Input* input) {
   input->pVlavo = pVlavo;
   input->k = k;
   input->pocetReplikacii = pocetReplikacii;
-  input->suborUlozenia = suborUlozenia;
+  //input->suborUlozenia = suborUlozenia;
   input->pripojenie = pripojenie;
 }
 
 void opatovneSpustenieForm(Input* input) {
-  char* suborSoSimulaciou = malloc(sizeof(char)*256);
+  //char* suborSoSimulaciou = malloc(sizeof(char)*256);
   int pocetReplikacii;
   int pripojenie;
-  char* suborUlozenia = malloc(sizeof(char)*256);
+  //char* suborUlozenia = malloc(sizeof(char)*256);
  
    system("clear");
   // suborSoSimulaciou
-  printf("\n========== MENU ==========\n");
-  printf("Zadajte cestu k súboru so simuláciou: ");
-  while (getchar() != '\n'); // Vyčistenie bufferu
+  //printf("\n========== MENU ==========\n");
+  //printf("Zadajte názov simulácie (.txt): ");
+  //while (getchar() != '\n'); // Vyčistenie bufferu
 
   // Čítanie reťazca
-  if (fgets(suborSoSimulaciou, 256, stdin) == NULL) {
-    printf("Chyba pri čítaní vstupu.\n");
-  }
-  system("clear");
+  //if (fgets(input->suborSoSimulaciou, 256, stdin) == NULL) {
+   // printf("Chyba pri čítaní vstupu.\n");
+  //}
+  //system("clear");
   
   //printf("%d\n", strcspn(suborUlozenia, "\n"));
   // Odstránenie znaku nového riadku (ak existuje)
-  suborSoSimulaciou[strcspn(suborSoSimulaciou, "\n")] = '\0';
+  //input->suborSoSimulaciou[strcspn(input->suborSoSimulaciou, "\n")] = '\0';
 
   system("clear");
   // pocetReplikacii
@@ -336,22 +336,22 @@ void opatovneSpustenieForm(Input* input) {
   system("clear");
   // subor ulozenia
   printf("\n========== MENU ==========\n");
-  printf("Zadajte cestu k súboru ulozenia simulacie: ");
+  printf("Zadajte názov simulácie (.txt): ");
   while (getchar() != '\n'); // Vyčistenie bufferu
 
   // Čítanie reťazca
-  if (fgets(suborUlozenia, 256, stdin) == NULL) {
+  if (fgets(input->suborUlozenia, 256, stdin) == NULL) {
     printf("Chyba pri čítaní vstupu.\n");
   }
   system("clear");
   
   //printf("%d\n", strcspn(suborUlozenia, "\n"));
   // Odstránenie znaku nového riadku (ak existuje)
-  suborUlozenia[strcspn(suborUlozenia, "\n")] = '\0';
+  input->suborUlozenia[strcspn(input->suborUlozenia, "\n")] = '\0';
 
   // Tu mám všetky premenné načítané, teraz ich uložiť do štruktúry
-  input->suborSoSimulaciou = suborSoSimulaciou;
+  //input->suborSoSimulaciou = suborSoSimulaciou;
   input->pocetReplikacii = pocetReplikacii;
-  input->suborUlozenia = suborUlozenia;
+  //input->suborUlozenia = suborUlozenia;
   input->pripojenie = pripojenie;
 }
