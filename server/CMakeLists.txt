@@ -1,3 +1,3 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
-PROJECT(x)
-ADD_EXECUTABLE(x main.c)
+add_executable(server main.c)
+target_link_libraries(server)
+
