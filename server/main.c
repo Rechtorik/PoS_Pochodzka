@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include <time.h>
 #include <pthread.h>
+#include "../common/inputStruktura.c"
+
+// zdielana pamat
+#include <sys/mman.h>
+#include <fcntl.h>
 
 typedef struct {
   int maxX;
@@ -134,28 +139,85 @@ void replikuj(SIMPAM* args) {
 
 
 int main(int argc, char *argv[]){
+
+
+
+
+
+
+  // JOJO PRIDAL ▄︻デ══━一💥
+  // Veľkosť štruktúry
+  size_t inputSize = sizeof(Input);
+
+  // Pripojenie k zdieľanej pamäti
+  int shm_fd = shm_open("/shared_input", O_RDWR, 0666);
+  if (shm_fd == -1) {
+      perror("shm_open");
+      exit(EXIT_FAILURE);
+  }
+
+  // Mapovanie pamäte
+  Input *inputJojo = mmap(NULL, inputSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+  if (inputJojo == MAP_FAILED) {
+      perror("mmap");
+      exit(EXIT_FAILURE);
+  }
+
+
+
+
+
+
+
   srand(time(NULL));
 
   SIMPAM* input = malloc(sizeof(SIMPAM));
 
-  input->maxX = atoi(argv[1]);
-  input->maxY = atoi(argv[2]);
-  input->pVpred = atof(argv[3]);
-  input->pVzad = atof(argv[4]);
-  input->pVpravo = atof(argv[5]);
-  input->pVlavo = atof(argv[6]);
-  input->k = atoi(argv[7]);
+  //input->maxX = atoi(argv[1]);
+  //input->maxY = atoi(argv[2]);
+  //input->pVpred = atof(argv[3]);
+  //input->pVzad = atof(argv[4]);
+  //input->pVpravo = atof(argv[5]);
+  //input->pVlavo = atof(argv[6]);
+  //input->k = atoi(argv[7]);
+  //input->x = 0;
+  //input->y = 0;
+  //input->nVpred = 0;
+  //input->nVzad = 0;
+  //input->nVpravo = 0;
+  //input->nVlavo = 0;
+  //input->reps = 100000;
+ 
+
+  // JOJO PRIDAL ▄︻デ══━一💥
+  input->maxX = inputJojo->maxX;
+  input->maxY = inputJojo->maxY;
+  input->pVpred = inputJojo->pVpred;
+  input->pVzad = inputJojo->pVzad;
+  input->pVpravo = inputJojo->pVpravo;
+  input->pVlavo = inputJojo->pVlavo;
+  input->k = inputJojo->k;
   input->x = 0;
   input->y = 0;
   input->nVpred = 0;
   input->nVzad = 0;
   input->nVpravo = 0;
   input->nVlavo = 0;
-  input->reps = 100000;
-  
+  input->reps = inputJojo->pocetReplikacii;
+
+
+
     int velkost = velkostMapy(input);
     printf("Veľkosť mapy: %d\n", velkost);
   replikuj(input);
   free(input);
+
+
+  // JOJO PRIDAL ▄︻デ══━一💥
+  // Odmapovanie pamäte a zatvorenie deskriptora
+  munmap(inputJojo, inputSize);
+  close(shm_fd);
+  shm_unlink("/shared_input");
+
   return 0;
 }

@@ -1,3 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-project(menu)
-add_executable(menu main.c)
+add_executable(klient main.c)
+target_link_libraries(klient)
+
