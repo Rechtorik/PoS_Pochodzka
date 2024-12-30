@@ -14,7 +14,7 @@ int main() {
   size_t inputSize = sizeof(Input);
 
   // Vytvorenie zdieľanej pamäte
-  int shm_fd = shm_open("/shared_input", O_CREAT | O_RDWR, 0666);
+  int shm_fd = shm_open("/shared_input_jojo", O_CREAT | O_RDWR, 0666);
   if (shm_fd == -1) {
       perror("shm_open");
       exit(EXIT_FAILURE);
@@ -159,7 +159,7 @@ int main() {
   // Odmapovanie pamäte a uvoľnenie zdrojov
   munmap(i, inputSize);
   close(shm_fd);
-  //shm_unlink("/shared_input");
+  shm_unlink("/shared_input_jojo");
   return 0;
 }
 
