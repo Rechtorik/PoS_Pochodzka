@@ -143,8 +143,8 @@ void replikuj(SIMPAM *args) {
     args->y++;
    // printf("Vpred\n");
   } else {
-	args->y = (-1)*args->maxY;
-    //	printf("teleportacia spredu dozadu\n");
+        args->y = (-1)*args->maxY;
+    //  printf("teleportacia spredu dozadu\n");
   }
   } else if(posun == 2){
     args->nVzad++;
@@ -152,8 +152,8 @@ void replikuj(SIMPAM *args) {
     args->y--;
     //printf("Vzad\n");
   } else {
-	args->y = args->maxY;
-    //	printf("teleportacia spredu dozadu\n");
+        args->y = args->maxY;
+    //  printf("teleportacia spredu dozadu\n");
   }
   } else if(posun == 3) {
     args->nVlavo++;
@@ -161,8 +161,8 @@ void replikuj(SIMPAM *args) {
     args->x--;
    // printf("Vlavo\n");
   } else {
-	args->x = args->maxX;
-   // 	printf("teleportacia zlava doprava\n");
+        args->x = args->maxX;
+   //   printf("teleportacia zlava doprava\n");
   }
 
   } else if (posun == 4) {
@@ -211,7 +211,7 @@ void replikuj(SIMPAM* args) {
 
 
 int main(int argc, char *argv[]){
- 
+
 
   // JOJO PRIDAL ▄︻デ══━一💥
   // Veľkosť štruktúry
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]){
   //input->nVpravo = 0;
   //input->nVlavo = 0;
   //input->reps = 100000;
- 
+
 
   // JOJO PRIDAL ▄︻デ══━一💥
   input->maxX = inputJojo->maxX;
@@ -276,7 +276,7 @@ int main(int argc, char *argv[]){
   input->nVlavo = 0;
   input->reps = inputJojo->pocetReplikacii;
 
-  printf("pred malloc\n"); 
+  printf("pred malloc\n");
 
   input->mapa = malloc((2*input->maxX + 1) * sizeof(int*));
   for(int i = 0; i < (2*input->maxX +1); i++){
@@ -284,13 +284,13 @@ int main(int argc, char *argv[]){
   }
 
 
-  printf("pred malloc\n"); 
+  printf("pred malloc\n");
   input->statPocetKrokov = malloc((2*input->maxX +1)*sizeof(float*));
   for(int i = 0; i < (2*input->maxX +1); i++){
     input->statPocetKrokov[i] = malloc((2*input->maxY + 1)*sizeof(float));
   }
 
-  printf("pred malloc\n"); 
+  printf("pred malloc\n");
   for(int i = 0; i <= 2*input->maxX; i++) {
     for(int j = 0; j <= 2*input->maxY; j++){
       input->mapa[i][j] = 0;
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]){
       }
   }
 
-  printf("pred malloc\n"); 
+  printf("pred malloc\n");
   int i,j;
   while (fscanf(mapInput, "%d %d", &i, &j) == 2) {
         if (i >= 0 && i <=2*input->maxX && j >= 0 && j <=2*input->maxY) {
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]){
     }
 
     input->mapa[input->maxX][input->maxY] = 2;
-  
+
     int velkost = velkostMapy(input);
     printf("Veľkosť mapy: %d\n", velkost);
     replikuj(input);
@@ -336,7 +336,7 @@ int main(int argc, char *argv[]){
   close(shm_fd);
   //shm_unlink("../shared_input_jojo");
   shm_unlink("/sem.shared_input_RJ");
-  
+
   
   for(int p = 0; p < (2*input->maxX);p++) {
     free(input->mapa[p]);
