@@ -14,7 +14,7 @@ int main() {
   size_t inputSize = sizeof(Input);
 
   // Vytvorenie zdieľanej pamäte
-  int shm_fd = shm_open("/shared_input_jojo", O_CREAT | O_RDWR, 0666);
+  int shm_fd = shm_open("/sem.shared_input_RJ", O_CREAT | O_RDWR, 0666);
   if (shm_fd == -1) {
       perror("shm_open");
       exit(EXIT_FAILURE);
@@ -78,7 +78,7 @@ int main() {
     // Zatvorenie súboru
     fclose(fileInput);
   } else {  // OPATOVNE SPUSTENIE SIMULACIE
-    
+
     char cesta[300] = "../../input_files/";
     strcat(cesta, i->suborUlozenia);
     FILE *fileInput = fopen(cesta, "r");
@@ -87,55 +87,55 @@ int main() {
     //    // Ak sa súbor nepodarí otvoriť, vypíše sa chybová hláška
     //    perror("Chyba pri otváraní súboru");
     //}
-    
+
     char buffer[256]; // Buffer na uloženie prečítaného obsahu
     // Čítanie obsahu riadok po riadku
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     // nazovMapy
     buffer[strlen(buffer) - 1] = '\0';
     strcat(i->mapaSubor, buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     // maxX
     buffer[strlen(buffer) - 1] = '\0';
     i->maxX = atoi(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //maxY
     buffer[strlen(buffer) - 1] = '\0';
     i->maxY = atoi(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //pVpred
     buffer[strlen(buffer) - 1] = '\0';
     i->pVpred = atof(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //pVzad
     buffer[strlen(buffer) - 1] = '\0';
     i->pVzad = atof(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //pVlavo
     buffer[strlen(buffer) - 1] = '\0';
     i->pVlavo = atof(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //pVpravo
     buffer[strlen(buffer) - 1] = '\0';
     i->pVpravo = atof(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //k
     buffer[strlen(buffer) - 1] = '\0';
     i->k = atoi(buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //nazovSimulacie
     buffer[strlen(buffer) - 1] = '\0';
     strcat(i->suborUlozenia, buffer);
-    
+
     fgets(buffer, sizeof(buffer), fileInput);
     //pripojenie (0 alebo 1)
     buffer[strlen(buffer) - 1] = '\0';
@@ -144,6 +144,7 @@ int main() {
     // Zatvorenie súboru
     fclose(fileInput);
   }
+  printf("Nazov mapy je: %s \n", i->mapaSubor);
 
   // V tomto momente uz mame naplnenu strukturu isto isto (nacitavanie zo suboru)
   // Uz vieme co ideme robit, len to treba spravit
@@ -159,7 +160,6 @@ int main() {
   // Odmapovanie pamäte a uvoľnenie zdrojov
   munmap(i, inputSize);
   close(shm_fd);
-  shm_unlink("/shared_input_jojo");
+  shm_unlink("/sem.shared_input_RJ");
   return 0;
 }
-
