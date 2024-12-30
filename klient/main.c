@@ -14,7 +14,7 @@ int main() {
   size_t inputSize = sizeof(Input);
 
   // Vytvorenie zdieľanej pamäte
-  int shm_fd = shm_open("/shared_input_jojo", O_CREAT | O_RDWR, 0666);
+  int shm_fd = shm_open("/sem.shared_input_RJ", O_CREAT | O_RDWR, 0666);
   if (shm_fd == -1) {
       perror("shm_open");
       exit(EXIT_FAILURE);
@@ -144,6 +144,7 @@ int main() {
     // Zatvorenie súboru
     fclose(fileInput);
   }
+  printf("Nazov mapy je: %s \n", i->mapaSubor);
 
   // V tomto momente uz mame naplnenu strukturu isto isto (nacitavanie zo suboru)
   // Uz vieme co ideme robit, len to treba spravit
@@ -159,7 +160,7 @@ int main() {
   // Odmapovanie pamäte a uvoľnenie zdrojov
   munmap(i, inputSize);
   close(shm_fd);
-  shm_unlink("/shared_input_jojo");
+  shm_unlink("/sem.shared_input_RJ");
   return 0;
 }
 

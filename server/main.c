@@ -218,7 +218,7 @@ int main(int argc, char *argv[]){
   size_t inputSize = sizeof(Input);
 
   // Pripojenie k zdieľanej pamäti
-  int shm_fd = shm_open("/shared_input_jojo", O_RDWR, 0666);
+  int shm_fd = shm_open("/sem.shared_input_RJ", O_RDWR, 0666);
   if (shm_fd == -1) {
       perror("shm_open");
       exit(EXIT_FAILURE);
@@ -334,8 +334,10 @@ int main(int argc, char *argv[]){
   // Odmapovanie pamäte a zatvorenie deskriptora
   munmap(inputJojo, inputSize);
   close(shm_fd);
-  //shm_unlink("/shared_input_jojo");
-
+  //shm_unlink("../shared_input_jojo");
+  shm_unlink("/sem.shared_input_RJ");
+  
+  
   for(int i = 0; i < (2*input->maxX);i++) {
     free(input->mapa[i]);
     //free(input->statPocetKrokov[i]);
