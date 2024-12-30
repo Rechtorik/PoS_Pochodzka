@@ -338,13 +338,13 @@ int main(int argc, char *argv[]){
   shm_unlink("/sem.shared_input_RJ");
   
   
-  for(int i = 0; i < (2*input->maxX);i++) {
-    free(input->mapa[i]);
+  for(int p = 0; p < (2*input->maxX);p++) {
+    free(input->mapa[p]);
     //free(input->statPocetKrokov[i]);
   }
- for(int i = 0; i < (2*input->maxX);i++) {
+ for(int p = 0; p < (2*input->maxX);p++) {
     //free(input->mapa[i]);
-    free(input->statPocetKrokov[i]);
+    free(input->statPocetKrokov[p]);
   }
   free(input->statPocetKrokov);
   free(input->mapa);
