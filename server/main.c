@@ -337,7 +337,7 @@ int main(int argc, char *argv[]){
   //shm_unlink("../shared_input_jojo");
   shm_unlink("/sem.shared_input_RJ");
 
-
+  
   for(int p = 0; p < (2*input->maxX);p++) {
     free(input->mapa[p]);
     //free(input->statPocetKrokov[i]);
