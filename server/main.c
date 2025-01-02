@@ -205,10 +205,10 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
   }
 
-    char cesta[300] = "../../map_files/";
-    strcat(cesta, inputJojo->mapaSubor);
-    printf("Server cesta mapy: %s\n", cesta);
-    FILE *mapInput = fopen(cesta, "r");
+    //char cestaMapa[300] = "../../map_files/";
+    //strcat(cestaMapa, inputJojo->mapaSubor);
+    //printf("Server cesta mapy: %s\n", cestaMapa);
+    //FILE *mapInputJojo = fopen(cestaMapa, "r");
 
     //if (mapInput == NULL) {
     //    // Ak sa súbor nepodarí otvoriť, vypíše sa chybová hláška
