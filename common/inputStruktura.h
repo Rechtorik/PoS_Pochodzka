@@ -5,7 +5,7 @@ typedef struct Input{
   // OPATOVNE SPUSTENIE
   int opatovneSpustenie; // 1 ak ano, 0 ak nie
   // MAPA
-  char mapaSubor[256];   // sÃºbor z ktoreho sa ma nacitat mapa
+  char mapaSubor[256];   // súbor z ktoreho sa ma nacitat mapa
   int maxX;     // sirka mapy - ak je 5 tak do +5 a -5 (vratane)
   int maxY;     // vyska mapy - ak je 5 tak do +5 a -5 (vratane)
   // PRAVDEPODOBNOSTI

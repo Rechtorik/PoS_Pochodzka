@@ -12,7 +12,7 @@ typedef struct Prekazky{
 } Prekazky;
 
 typedef struct Mapa{
-  Suradnice opilec;
+  Suradnice opilec; 
   Prekazky prekazky;
 } Mapa;
 

@@ -132,6 +132,7 @@ void simulaciaForm(Input* input) {
   int k;
   int pocetReplikacii;
   int pripojenie;
+  int vykreslenie;
   //char* suborUlozenia = malloc(sizeof(char)*256);
 
   
@@ -255,6 +256,21 @@ void simulaciaForm(Input* input) {
   }
 
   system("clear");
+  // pripojenie
+  printf("\n========== MENU ==========");
+  printf("\n1. Chcete vykresliť priebeh?\n");
+  printf("   1 => áno\n");
+  printf("   0 => nie\n");
+  printf("==========================\n");
+  printf("Zadajte svoju voľbu: ");
+
+  // Čítanie voľby používateľa
+  if (scanf("%d", &vykreslenie) != 1) {
+    printf("Neplatný vstup! Prosím, zadajte číslo.\n");
+    while (getchar() != '\n'); // Vyčistenie bufferu
+  }
+
+  system("clear");
   // subor ulozenia
   printf("\n========== MENU ==========\n");
   printf("Zadajte názov simulacie (.txt): ");
@@ -264,6 +280,7 @@ void simulaciaForm(Input* input) {
   if (fgets(input->suborUlozenia, 256, stdin) == NULL) {
     printf("Chyba pri čítaní vstupu.\n");
   }
+
   system("clear");
   
   //printf("%d\n", strcspn(suborUlozenia, "\n"));
@@ -281,6 +298,7 @@ void simulaciaForm(Input* input) {
   input->pocetReplikacii = pocetReplikacii;
   //input->suborUlozenia = suborUlozenia;
   input->pripojenie = pripojenie;
+  input->vykreslenie = vykreslenie;
 }
 
 void opatovneSpustenieForm(Input* input) {
@@ -343,7 +361,21 @@ void opatovneSpustenieForm(Input* input) {
   if (fgets(input->suborUlozenia, 256, stdin) == NULL) {
     printf("Chyba pri čítaní vstupu.\n");
   }
+
   system("clear");
+  // pripojenie
+  printf("\n========== MENU ==========");
+  printf("\n1. Chcete vykresliť priebeh?\n");
+  printf("   1 => áno\n");
+  printf("   0 => nie\n");
+  printf("==========================\n");
+  printf("Zadajte svoju voľbu: ");
+
+  // Čítanie voľby používateľa
+  if (scanf("%d", &(input->vykreslenie)) != 1) {
+    printf("Neplatný vstup! Prosím, zadajte číslo.\n");
+    while (getchar() != '\n'); // Vyčistenie bufferu
+  }
   
   //printf("%d\n", strcspn(suborUlozenia, "\n"));
   // Odstránenie znaku nového riadku (ak existuje)
