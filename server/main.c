@@ -5,7 +5,8 @@
 #include <time.h>
 #include <pthread.h>
 #include <string.h>
-#include "../common/inputStruktura.c"
+#include "../common/inputStruktura.h"
+#include "../common/prekazky.h"
 
 // zdielana pamat
 #include <sys/mman.h>
@@ -29,6 +30,7 @@ typedef struct {
   pthread_mutex_t mutex;
   int ** mapa;
   float **statPocetKrokov;
+  float **dostalSaDoStredu;
 
 
 }SIMPAM;
@@ -39,6 +41,51 @@ int velkostMapy(SIMPAM* args) {
     return  rozmerX*rozmerY;
 
 }
+void generujMapu(SIMPAM* args) {
+    
+    int napocitavanie = 0;
+    int pocetPrekazok = rand() % (args->maxX + args->maxY);
+    int max = pocetPrekazok;
+    while (napocitavanie < pocetPrekazok && max > 0) {
+        
+        max--;
+        int prekX = rand() % (2 * args->maxX + 1);  
+        int prekY = rand() % (2 * args->maxY + 1); 
+   
+      if (prekX < 0 || prekX > 2 * args->maxX || prekY < 0 || prekY > 2 * args->maxY) {
+            printf("Generated invalid index prekX=%d, prekY=%d\n", prekX, prekY);
+            continue; // Ignorovať túto iteráciu
+        }
+        bool validna = true;
+      
+
+        // Kontrola okolia
+        for (int i = -1; i <= 1; i++) { // kontroluje okolie x
+            for (int j = -1; j <= 1; j++) { // detto pre y
+          
+                int noveX = prekX + i;
+                int noveY = prekY + j;
+
+                if (noveX >= 0 && noveX <= 2 * args->maxX && 
+                    noveY >= 0 && noveY <= 2 * args->maxY) {
+                    printf("%d %d\n",noveX,noveY);
+                    if (args->mapa[noveX][noveY] == 1) {
+                        validna = false;
+                        break;
+                    }
+                }
+            }
+            if (!validna) break;
+        }
+
+
+        // Ak je pozícia validná, pridaj prekážku
+        if (validna) {
+            args->mapa[prekX][prekY] = 1;
+            napocitavanie++;
+        }
+  }
+}
 
 int vyberSmer(void* args){
 
@@ -47,16 +94,16 @@ int vyberSmer(void* args){
   int random = rand()%(input->pVpred + input->pVzad + input->pVlavo + input->pVpravo);
   int volba = 0;
   if(random < input->pVpred){
-    //input->y++; // pohne sa vpred
+    // pohne sa vpred
     volba = 1;
   }else if (random < input->pVpred+input->pVzad) {
-    //input->y--;//pohne sa vzad
+    //pohne sa vzad
     volba = 2;
   } else if(random < input->pVpred + input->pVzad + input->pVlavo) {
-    //input->x--;//pohne sa vlavo
+    //pohne sa vlavo
     volba = 3;
   }else {
-    //input->x++;//pohne sa vpravo
+    //pohne sa vpravo
     volba = 4;
   }
     return volba;
@@ -77,24 +124,22 @@ void zmenPoziciu(SIMPAM *args) {
     } else if (posun == 4) {  // Posun nadol (i++)
         newI = (args->x + 1 > args->maxX) ? 0 : args->x + 1;
     } else {
-        //printf("Neplatný smer pohybu: %d\n", posun);
         return;
     }
 
     // Kontrola, či je nové políčko blokované
     if (args->mapa[newI][newJ] == 1) {
-       // printf("Pohyb na blokované políčko [%d][%d] zamietnutý.\n", newI, newJ);
         return;
     }
 
     // Ak pohyb nie je blokovaný, aktualizujeme súradnice
     args->x = newI;
     args->y = newJ;
-    //printf("Presun na [%d][%d] úspešný.\n", args->x, args->y);
+    
 }
 void replikuj(SIMPAM *args) {
-    for (int i = 0; i < 2 * args->maxX; i++) {
-        for (int j = 0; j < 2 * args->maxY; j++) {
+    for (int i = 0; i <= 2 * args->maxX; i++) {
+        for (int j = 0; j <= 2 * args->maxY; j++) {
             int totalSteps = 0;
 
             for (int r = 0; r < args->reps; r++) {
@@ -105,7 +150,7 @@ void replikuj(SIMPAM *args) {
                 while (steps < args->k) {  // Maximálny počet krokov
                     // Ak sa dostaneme na cieľové políčko (hodnota 2), ukončíme pohyb
                     if (args->mapa[args->x][args->y] == 2) {
-                        //printf("Cieľ dosiahnutý na [%d][%d] po %d krokoch.\n", i, j, steps);
+                        args->dostalSaDoStredu[i][j] += 1;
                         break;
                     }
 
@@ -116,7 +161,7 @@ void replikuj(SIMPAM *args) {
 
                 if (steps == args->k && args->mapa[args->x][args->y] != 2) {
                     printf("NEDOSTAL SA na [%d][%d] po %d krokoch.\n", i, j, args->k);
-                    args->statPocetKrokov[i][j] = 0;
+                   // args->statPocetKrokov[i][j] = 0;
                 } else {
                     totalSteps += steps;
                 }
@@ -128,87 +173,14 @@ void replikuj(SIMPAM *args) {
                 printf("Startovacia pozícia [%d][%d]: Priemerný počet krokov = %.2f\n", i, j, averageSteps);
                 args->statPocetKrokov[i][j] = averageSteps;
             }
+          if(args->mapa[i][j] == 1){
+            args->statPocetKrokov[i][j] = 0.0;
+            args->dostalSaDoStredu[i][j] = 0.0;
+
+           }
         }
     }
 }
-/* void zmenPoziciu(SIMPAM* args){
-
-  int posun = vyberSmer(args);
-
-  //printf("Povodne suradnice: x: %d, y: %d\n",args->x,args->y);
-
-  if(posun == 1) {
-    args->nVpred++;
-    if(args->y < args->maxY){
-    args->y++;
-   // printf("Vpred\n");
-  } else {
-        args->y = (-1)*args->maxY;
-    //  printf("teleportacia spredu dozadu\n");
-  }
-  } else if(posun == 2){
-    args->nVzad++;
-    if(args->y > args->maxY*(-1)){
-    args->y--;
-    //printf("Vzad\n");
-  } else {
-        args->y = args->maxY;
-    //  printf("teleportacia spredu dozadu\n");
-  }
-  } else if(posun == 3) {
-    args->nVlavo++;
-    if(args->x > args->maxX*(-1)){
-    args->x--;
-   // printf("Vlavo\n");
-  } else {
-        args->x = args->maxX;
-   //   printf("teleportacia zlava doprava\n");
-  }
-
-  } else if (posun == 4) {
-    args->nVpravo++;
-     if(args->x < args->maxX){
-    args->x++;
-   // printf("Vpravo\n");
-  } else {
-    args->x = (-1)*args->maxX;
-   // printf("teleportacia sprava dolava\n");
-    }
-  } else {
-    printf("error\n");
-  }
-
- // printf("Nove suradnice: x: %d, y: %d\n******************************\n",args->x,args->y);
-
-  }
-
-
-void replikuj(SIMPAM* args) {
-    for (int i = -args->maxX; i <= args->maxX; i++) {
-        for (int j = -args->maxY; j <= args->maxY; j++) {
-            int total = 0;
-
-            for (int a = 0; a < args->reps; a++) {
-                args->x = i;
-                args->y = j;
-                int num = 0;
-
-                while (!(args->x == 0 && args->y == 0)&&num!=args->k) {
-                    num++;
-                    zmenPoziciu(args);
-                }
-
-                total += num;
-            }
-
-            // Výpočet priemeru
-            double average = (double)total / args->reps;
-            printf("Startovacia pozicia: x = %d, y = %d, priemerny pocet krokov: %.2f\n", i, j, average);
-        }
-    }
-}*/
-
-
 
 int main(int argc, char *argv[]){
 
@@ -231,15 +203,7 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
   }
 
-    char cesta[300] = "../../map_files/";
-    strcat(cesta, inputJojo->mapaSubor);
-    FILE *mapInput = fopen(cesta, "r");
-
-    //if (mapInput == NULL) {
-    //    // Ak sa súbor nepodarí otvoriť, vypíše sa chybová hláška
-    //    perror("Chyba pri otváraní súboru");
-    //}
-
+   
   srand(time(NULL));
 
   SIMPAM* input = malloc(sizeof(SIMPAM));
@@ -275,31 +239,68 @@ int main(int argc, char *argv[]){
   input->nVpravo = 0;
   input->nVlavo = 0;
   input->reps = inputJojo->pocetReplikacii;
+  bool generujem = false;
+  FILE* mapInput;
 
-  printf("pred malloc\n");
 
-  input->mapa = malloc((2*input->maxX + 1) * sizeof(int*));
+input->mapa = malloc((2*input->maxX + 1) * sizeof(int*));
   for(int i = 0; i < (2*input->maxX +1); i++){
     input->mapa[i] = malloc((2*input->maxY + 1) * sizeof(int));
   }
-
-
-  printf("pred malloc\n");
-  input->statPocetKrokov = malloc((2*input->maxX +1)*sizeof(float*));
+ input->statPocetKrokov = malloc((2*input->maxX +1)*sizeof(float*));
   for(int i = 0; i < (2*input->maxX +1); i++){
     input->statPocetKrokov[i] = malloc((2*input->maxY + 1)*sizeof(float));
   }
-
-  printf("pred malloc\n");
-  for(int i = 0; i <= 2*input->maxX; i++) {
-    for(int j = 0; j <= 2*input->maxY; j++){
+  input->dostalSaDoStredu = malloc((2*input->maxX + 1) * sizeof(float*));
+  for(int i = 0; i < (2*input->maxX + 1);i++){
+    input->dostalSaDoStredu[i] = malloc((2*input->maxY + 1) * sizeof(float));
+  }
+for(int i = 0; i <= 2 * input->maxX; i++) {
+    for(int j = 0; j <= 2 * input->maxY; j++){
       input->mapa[i][j] = 0;
       input->statPocetKrokov[i][j] = 0.0;
+      input->dostalSaDoStredu[i][j] = 0.0;
       }
   }
 
-  printf("pred malloc\n");
+for (int i = 0; i < 2 * input->maxX + 1; i++) {
+    if (input->mapa[i] == NULL) {
+        printf("Memory allocation failed - mapa[%d]\n", i);
+        exit(EXIT_FAILURE);
+    }
+    if (input->statPocetKrokov[i] == NULL) {
+        printf("Memory allocation failed - statPocetKrokov[%d]\n", i);
+        exit(EXIT_FAILURE);
+    }
+    if (input->dostalSaDoStredu[i] == NULL) {
+        printf("Memory allocation failed - dostalSaDoStredu[%d]\n", i);
+        exit(EXIT_FAILURE);
+    }
+}
+printf("Memory allocation successful\n");
+
+
+  if(strlen(inputJojo->mapaSubor) == 0){
+    generujMapu(input);
+    generujem = true;
+  } else {
+  char cesta[300] = "../../map_files/";
+  strcat(cesta, inputJojo->mapaSubor);
+  mapInput = fopen(cesta, "r");
+  generujem = false;
+  }
+
+    //if (mapInput == NULL) {
+    //    // Ak sa súbor nepodarí otvoriť, vypíše sa chybová hláška
+    //    perror("Chyba pri otváraní súboru");
+    //}
+
+  
+
   int i,j;
+
+
+ if(!generujem) { 
   while (fscanf(mapInput, "%d %d", &i, &j) == 2) {
         if (i >= 0 && i <=2*input->maxX && j >= 0 && j <=2*input->maxY) {
             input->mapa[i][j] = 1;  // Nastav hodnotu na 1, ak sú súradnice platné
@@ -307,6 +308,7 @@ int main(int argc, char *argv[]){
             printf("Súradnice (%d, %d) sú mimo rozsah!\n", i, j);
         }
     }
+  } 
 
     input->mapa[input->maxX][input->maxY] = 2;
 
@@ -328,7 +330,14 @@ int main(int argc, char *argv[]){
     }
     printf("\n");
   }
-
+printf("kolko krat sa dostal do stredu z %d iteracii:\n", input -> reps);
+  for (int x = 0; x <= 2*input->maxX; x++ ) {
+    for(int y = 0; y<= 2*input->maxY; y++) {
+      printf("%6.1f", input->dostalSaDoStredu[x][y]);
+    }
+    printf("\n");
+  }
+  
 
   // JOJO PRIDAL ▄︻デ══━一💥
   // Odmapovanie pamäte a zatvorenie deskriptora
@@ -338,17 +347,21 @@ int main(int argc, char *argv[]){
   shm_unlink("/sem.shared_input_RJ");
 
   
-  for(int p = 0; p < (2*input->maxX);p++) {
+  for(int p = 0; p < (2*input->maxX + 1);p++) {
     free(input->mapa[p]);
-    //free(input->statPocetKrokov[i]);
   }
- for(int p = 0; p < (2*input->maxX);p++) {
-    //free(input->mapa[i]);
+ for(int p = 0; p < (2*input->maxX + 1);p++) {
     free(input->statPocetKrokov[p]);
   }
+
+ for(int p = 0; p < (2*input->maxX + 1);p++) {
+    free(input->dostalSaDoStredu[p]);
+  }
+  free(input->dostalSaDoStredu);
   free(input->statPocetKrokov);
   free(input->mapa);
   free(input);
-  fclose(mapInput);
+  if(!generujem){
+  fclose(mapInput);}
   return 0;
 }
