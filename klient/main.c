@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../common/inputStruktura.c"
+#include "../common/inputStruktura.h"
 #include "menu.c"
 #include <string.h>
 
