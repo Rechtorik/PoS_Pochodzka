@@ -23,6 +23,8 @@ typedef struct Input{
   int pripojenie;
   // PRIPOJENIE SA NA PREBIEHAJUCU SIMULACIU?  1 => ano, 0 => nie
   int pripojenieNaPrebiehajucu;
+  // BOOL VYKRESLOVANIE PRIEBEHU
+  int vykreslenie;
 } Input;
 
 #endif // INPUT_STRUKTURA

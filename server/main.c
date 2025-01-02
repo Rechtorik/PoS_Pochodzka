@@ -5,11 +5,14 @@
 #include <time.h>
 #include <pthread.h>
 #include <string.h>
-#include "../common/inputStruktura.c"
+#include "../common/inputStruktura.h"
+#include "../common/prekazky.h"
 
 // zdielana pamat
+#include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#define FIFO_RESULT "../../fifo_files/"
 
 typedef struct {
   int maxX;
@@ -93,8 +96,8 @@ void zmenPoziciu(SIMPAM *args) {
     //printf("Presun na [%d][%d] úspešný.\n", args->x, args->y);
 }
 void replikuj(SIMPAM *args) {
-    for (int i = 0; i < 2 * args->maxX; i++) {
-        for (int j = 0; j < 2 * args->maxY; j++) {
+    for (int j = 0; j <= 2 * args->maxX; j++) {
+        for (int i = 0; i <= 2 * args->maxY; i++) {
             int totalSteps = 0;
 
             for (int r = 0; r < args->reps; r++) {
@@ -233,6 +236,7 @@ int main(int argc, char *argv[]){
 
     char cesta[300] = "../../map_files/";
     strcat(cesta, inputJojo->mapaSubor);
+    printf("Server cesta mapy: %s\n", cesta);
     FILE *mapInput = fopen(cesta, "r");
 
     //if (mapInput == NULL) {
@@ -298,11 +302,31 @@ int main(int argc, char *argv[]){
       }
   }
 
+
+
+            printf("Server: pred prekazkami\n");
+  // JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // JOJO PRIDAL ▄︻デ══━一💥
+  Prekazky prekazky;
+  prekazky.pocet = 0;
+
+
+
+
   printf("pred malloc\n");
   int i,j;
   while (fscanf(mapInput, "%d %d", &i, &j) == 2) {
         if (i >= 0 && i <=2*input->maxX && j >= 0 && j <=2*input->maxY) {
             input->mapa[i][j] = 1;  // Nastav hodnotu na 1, ak sú súradnice platné
+      
+            printf("Server: pred zapisovanim prekazok\n");
+            // JOJO PRIDAL
+            prekazky.prekazky[prekazky.pocet].x = i;
+            prekazky.prekazky[prekazky.pocet].y = j;
+            prekazky.pocet++;
+            printf("Server: po zapisovani prekazok\n");
+
+
         } else {
             printf("Súradnice (%d, %d) sú mimo rozsah!\n", i, j);
         }
@@ -313,6 +337,55 @@ int main(int argc, char *argv[]){
     int velkost = velkostMapy(input);
     printf("Veľkosť mapy: %d\n", velkost);
     replikuj(input);
+    
+
+
+
+
+
+
+    // JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // JOJO PRIDAL ▄︻デ══━一💥
+    // Veľkosť štruktúry
+    size_t mapaSize = sizeof(Mapa);
+
+    // Pripojenie k zdieľanej pamäti
+    printf("Server: Pred open\n");
+    int shm_mapa_fd = shm_open("/sem.shared_mapa_RJ", O_RDWR, 0666);
+    if (shm_mapa_fd == -1) {
+      perror("shm_open");
+      exit(EXIT_FAILURE);
+    }
+
+    // Mapovanie pamäte
+    printf("Server: Pred mmap\n");
+    Mapa* mapaJojo = mmap(NULL, mapaSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_mapa_fd, 0);
+    if (mapaJojo == MAP_FAILED) {
+      perror("mmap");
+      exit(EXIT_FAILURE);
+    }
+
+
+    mapaJojo->opilec.x = input->x;
+    mapaJojo->opilec.y = input->y;
+    mapaJojo->prekazky = prekazky;
+
+    // Odmapovanie pamäte a zatvorenie deskriptora
+    printf("Server: Pred unmap\n");
+    munmap(mapaJojo, mapaSize);
+    printf("Server: Pred close\n");
+    close(shm_mapa_fd);
+    printf("Server: konec\n");
+    //shm_unlink("../shared_input_jojo");
+    //shm_unlink("/sem.shared_mapa_RJ");
+
+
+
+
+
+
+
+
 
   printf("Pole:\n");
     for (int x = 0; x <= 2*input->maxX; x++) {
@@ -330,13 +403,46 @@ int main(int argc, char *argv[]){
   }
 
 
-  // JOJO PRIDAL ▄︻デ══━一💥
+  
+
+    // JOJO PRIDAL ▄︻デ══━一💥
+    // Otvorenie FIFO na zápis
+    char fifo_cesta[256] = FIFO_RESULT;
+    strcat(fifo_cesta, inputJojo->suborUlozenia);
+    for(int p = 0; p < 4; p++) {
+      fifo_cesta[strlen(fifo_cesta)-1] = '\0';
+    }
+    int fd_result = open(fifo_cesta, O_WRONLY);
+    if (fd_result == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+
+    // float**
+    // input->statPocetKrokov 
+    // Zápis hodnôt do FIFO
+    for(int r = 0; r < (input->maxY)*2+1; r++) { // po riadkoch
+      if (write(fd_result, input->statPocetKrokov[r], sizeof(float)*input->maxX*2+1) == -1) {
+        perror("write");
+        close(fd_result);
+        exit(EXIT_FAILURE);
+      } 
+    }
+    
+    close(fd_result);
+
+
   // Odmapovanie pamäte a zatvorenie deskriptora
   munmap(inputJojo, inputSize);
   close(shm_fd);
   //shm_unlink("../shared_input_jojo");
   shm_unlink("/sem.shared_input_RJ");
 
+  // Vytvorenie pomenovanej FIFO
+    //if (mkfifo(FIFO_RESULT, 0666) == -1) {
+    //    perror("mkfifo");
+    //    exit(EXIT_FAILURE);
+    //}
   
   for(int p = 0; p < (2*input->maxX);p++) {
     free(input->mapa[p]);
