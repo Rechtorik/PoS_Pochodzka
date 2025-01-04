@@ -9,20 +9,19 @@ int kresli(Input* input, Suradnice player, int pocetPrekazok, Prekazky* prekazky
     //system("clear"); // Vyčistenie konzoly (použi "cls" na Windows)
     for (int i = 0; i < input->maxY*2+1; i++) {
         for (int j = 0; j < input->maxX*2+1; j++) {
-            if(j == input->maxX && i == input->maxY) { printf("X "); continue; } // stred mapy
-            if (i == player.y && j == player.x) {
-                printf("P "); // Hráč
-                continue;
-            } else {
-                for(int k = 0; k < pocetPrekazok; k++) {
-                    if(i == prekazky->prekazky[k].x && j == prekazky->prekazky[k].y) {
-                        printf("# "); // Prekazka
-                        break;
-                    }
-                    if(k == pocetPrekazok-1) printf(". ");
-                }
+
+          if(j == input->maxX && i == input->maxY) { printf("X "); continue; } // stred mapy
+          if (i == player.y && j == player.x) { printf("P "); continue; } // Hráč
+          for(int k = 0; k < pocetPrekazok + 1; k++) {
+
+            if(k == pocetPrekazok) { printf(". "); break;}
+            if(i == prekazky->prekazky[k].y && j == prekazky->prekazky[k].x) {
+              printf("# "); // Prekazka
+              break;
             }
+          }
         }
+
         printf("\n");
     }
   return 0;
