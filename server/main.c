@@ -76,7 +76,9 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
                 int noveY = prekY + j;
 
                 if (noveX > 0 && noveX < 2 * args->maxX && //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
+
                     noveY > 0 && noveY < 2 * args->maxY &&
+
                     noveX != args->maxX && noveY != args->maxY) {
                     if (args->mapa[noveY][noveX] == 1) {
                         validna = false;
@@ -131,6 +133,7 @@ void zmenPoziciu(SIMPAM *args) {
     int newY = args->y;
     bool ok = false;
 
+
     while(!ok){
       int posun = vyberSmer(args);  // Získanie smeru pohybu
       newX = args->x;
@@ -182,13 +185,13 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
                     // Kód vo while cykluse JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     if(update_shm != NULL){
                       int hodnota;
+
                       sem_getvalue(semServer, &hodnota);
                       printf("Server semafor hodnota pred wait: %d\n", hodnota);
                       sem_wait(semServer);
                       // Aktualizácia údajov
                       update_shm->mapa.opilec.x = args->x;  // Náhodná hodnota
                       update_shm->mapa.opilec.y = args->y;  // Náhodná hodnota
-
                       sem_post(semKlient);
                     }
                     printf("Server: x:%d y:%d\n", args->x, args->y);
@@ -222,13 +225,13 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
 }
 
 int main(int argc, char *argv[]){
-
+  
  // Pripojenie k existujúcemu semaforu
     sem_t *semKlient = sem_open(SEMAPHORE_KLIENT_NAME, 0);
     if (semKlient == SEM_FAILED) {
         perror("sem_open");
         exit(EXIT_FAILURE);
-    }
+    } 
   // Pripojenie k existujúcemu semaforu
     sem_t *semServer = sem_open(SEMAPHORE_SERVER_NAME, 0);
     if (semServer == SEM_FAILED) {
@@ -260,7 +263,7 @@ int main(int argc, char *argv[]){
       perror("shm_open");
       exit(EXIT_FAILURE);
   }
-
+  
   size_t resultSize = sizeof(int)*((inputJojo.maxX*2+1) * (inputJojo.maxY*2+1));
   // 2. Nastavenie veľkosti zdieľanej pamäte
   if (ftruncate(shm_result_fd, resultSize) == -1) {
@@ -397,9 +400,6 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
 //꧁𝔂𝓪𝓼𝓼 𝓺𝓾𝓮𝓮𝓷꧂
 
-
-
-
   int px,py;
 
   if(!generujem) {
@@ -471,6 +471,7 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
   }
     printf("Server: Po replikaciach\n");
 
+
   //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
 
   usleep(50000);
@@ -499,11 +500,10 @@ printf("kolko krat sa dostal do stredu z %d iteracii:\n", input -> reps); //☆.
 printf("KONIEC\n");
 
 
-
-
     // JOJO PRIDAL ▄︻デ══━一💥
     // float**
     // input->statPocetKrokov
+
     // Zápis hodnôt do RESULT
     for(int r = 0; r < input->maxY*2+1; r++) { // po riadkoch
       for(int s = 0; s < input->maxX; s++) {
@@ -513,6 +513,7 @@ printf("KONIEC\n");
 
     munmap(vykreslenie, vykreslenieSize);
     close(shm_vykreslenie_fd);
+
 
     munmap(result, resultSize);
     close(shm_result_fd);
