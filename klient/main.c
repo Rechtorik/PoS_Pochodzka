@@ -8,6 +8,7 @@
 #include "kreslenie.c"
 #include "menu.c"
 
+#include <dirent.h>
 #include <string.h>
 #include <semaphore.h>
 #include <sys/mman.h>
@@ -16,47 +17,123 @@
 #include <sys/stat.h>
 
 #define FIFO_INPUT "../../fifo_files/input"
-#define SHM_NAME "/sem.shared_vykreslenie_RJ_"
-#define SEMAPHORE_KLIENT_NAME "/shared_semaphore_klient_RJ"
-#define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ"
+#define SHM_VYKRESLENIE_NAME "/shared_vykreslenie_RJ_"
+#define SHM_RESULT_NAME "/shared_result_RJ_"
+#define SEMAPHORE_KLIENT_NAME "/shared_semaphore_klient_RJ_"
+#define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ_"
+
+
+// Funkcia vlákna na ukončenie výstupu
+void *waitForCtrlD(void *arg) {
+    Vykreslenie_shm* par = (Vykreslenie_shm*)arg;
+
+    int ch;
+    while (par->end == 0) {  // Pokračuje, kým end nie je 1
+        ch = getchar();
+        if (ch == 'k') {  // Detekcia CTRL+D
+            par->end = 1; // Nastavenie end na 1
+            break;        // Ukončenie cyklu
+        }
+    }
+
+    pthread_exit(NULL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 int main(int argc, char* argv[]) {
-
-
-  sem_unlink(SEMAPHORE_KLIENT_NAME);
-  sem_unlink(SEMAPHORE_SERVER_NAME);
-
-  // Vytvorenie semaforu pre server
-  sem_t *semServer = sem_open(SEMAPHORE_SERVER_NAME, O_CREAT, 0666, 1); // Inicializovaný na 0
-  if (semServer == SEM_FAILED) {
-      perror("sem_open");
-      exit(EXIT_FAILURE);
-  }
-  // Vytvorenie semaforu pre klienta
-  sem_t *semKlient = sem_open(SEMAPHORE_KLIENT_NAME, O_CREAT, 0666, 0); // Inicializovaný na 0
-  if (semKlient == SEM_FAILED) {
-      perror("sem_open");
-      exit(EXIT_FAILURE);
-  }
 
   // Input struktura (prazdna)
   Input input;
   memset(&input, 0, sizeof(input));
 
-  menu(&input);
+  int menuExit = menu(&input);
+
+  if(menuExit) return 0;
 
   // V tomto momente uz mame input z menu
 
-  if(input.pripojenieNaPrebiehajucu) {
-    // kod na vypisanie prebiehajucich
+  if(input.pripojenieNaPrebiehajucu) { //                             🔄🔌
+
+    const char *shm_dir = "/dev/shm"; // Adresár pre zdieľanú pamäť
+    struct dirent *entry;
+
+    // Otvorenie adresára /dev/shm
+    DIR *dir = opendir(shm_dir);
+    if (dir == NULL) {
+        perror("Nepodarilo sa otvoriť /dev/shm");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Prebiehajúce simulácie, zadajte 'exit' na vypnutie:\n");
+    printf("---------------------------------------\n");
+
+    // Iterácia cez obsah adresára
+    while ((entry = readdir(dir)) != NULL) {
+        // Skontroluj, či názov obsahuje "vykreslenie"
+        char* retazec = NULL;
+        retazec = strstr(entry->d_name, "vykreslenie_RJ");
+        if (retazec != NULL) {
+            printf("%s\n", retazec + 15); // Vypíše len záznamy obsahujúce "vykreslenie"
+        }
+
+    }
+    closedir(dir);
+
+    printf("Zadajte názov simulácie, na ktorú sa chcete pripojiť: \n");
+    char nazovSimulacie[256];
+    memset(nazovSimulacie, 0, sizeof(nazovSimulacie));
+    
+    while (getchar() != '\n'); // vycistenie bufferu
+    fgets(nazovSimulacie, sizeof(nazovSimulacie), stdin);  // Načítanie celej línie
+    //while (getchar() != '\n'); // vycistenie bufferu
+    nazovSimulacie[strlen(nazovSimulacie)-1] = '\0';
+
+    if(strcmp(nazovSimulacie, "exit") == 0) { printf("Aplikácia sa ukončuje...\n"); return 0; }
+    
+    //Pripojenie sa na zdielanun pamat
+    char menoVykreslenia[256] = SHM_VYKRESLENIE_NAME;
+    strcat(menoVykreslenia, nazovSimulacie);
+    int shm_vykreslenie_fd = shm_open(menoVykreslenia, O_RDONLY, 0666);
+    if (shm_vykreslenie_fd == -1) {
+        perror("shm_open");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t vykreslenieSize = sizeof(Vykreslenie_shm);
+    Vykreslenie_shm* vykreslenie = mmap(0, vykreslenieSize, PROT_READ, MAP_SHARED, shm_vykreslenie_fd, 0);
+    if (vykreslenie == MAP_FAILED) {
+        perror("mmap");
+        exit(EXIT_FAILURE);
+    }
+    
+    if(vykreslenie->pripojenie) {
+        while(vykreslenie->end == 0) {
+        kresli(vykreslenie, 0);
+      }
+    } else {
+      printf("Na túto simuláciu nieje dovolené pripojenie!\n");
+    }
+
+    return 0; //                                                      🔄🔌
   }
 
 
   // ZDIELANA PAMAT - VYKRESLENIE
   //Otvorenie zdieľanej pamäte
-  char menoSimulacie[256] = SHM_NAME;
+  char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
   strcat(menoSimulacie, input.suborUlozenia);
-  memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4);
+  memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4); // odstranenie .txt
   printf("%s\n", menoSimulacie);
   int shm_vykreslenie_fd = shm_open(menoSimulacie, O_CREAT | O_RDWR, 0666);
   if (shm_vykreslenie_fd == -1) {
@@ -76,6 +153,7 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
   }
   vykreslenie->pripojenie = input.pripojenie;
+  vykreslenie->pocetPripojenych++;
 
   // VYTVORENIE TEXTAKU NA INPUT
   if(input.opatovneSpustenie == 0) { // NOVA SIMULACIA
@@ -102,6 +180,12 @@ int main(int argc, char* argv[]) {
 
     // Zatvorenie súboru
     fclose(fileInput);
+
+    // Pokus o vymazanie súboru result
+    char resultFile[256] = "../../result_files/";
+    strcat(resultFile, input.suborUlozenia);
+    remove(resultFile); 
+
   } else {  // OPATOVNE SPUSTENIE SIMULACIE
 
     char cesta[300] = "../../input_files/";
@@ -189,6 +273,9 @@ int main(int argc, char* argv[]) {
   // V tomto momente uz mame naplnenu strukturu isto isto (nacitavanie zo suboru)
   // Uz vieme co ideme robit, len to treba spravit
 
+  vykreslenie->mapa.maxX = input.maxX;
+  vykreslenie->mapa.maxY = input.maxY;
+  vykreslenie->pocetReplikacii = input.pocetReplikacii;
 
   // FIFO INPUT vytvorenie
   // Skontroluj, či FIFO existuje
@@ -198,13 +285,7 @@ int main(int argc, char* argv[]) {
             perror("Chyba pri vytváraní FIFO");
             return 1;
         }
-    } else {
-        printf("FIFO už existuje: %s\n", FIFO_INPUT);
-    }
-
-
-
-
+    } 
 
 
   // spustenie
@@ -229,55 +310,86 @@ int main(int argc, char* argv[]) {
   }
 
   close(fd_input);
+  
+  char semKlientName[256] = SEMAPHORE_KLIENT_NAME;
+  strcat(semKlientName, input.suborUlozenia);
+  memset(&semKlientName[strlen(semKlientName) - 4], 0, 4);
+  char semServerName[256] = SEMAPHORE_SERVER_NAME;
+  strcat(semServerName, input.suborUlozenia);
+  memset(&semServerName[strlen(semServerName) - 4], 0, 4);
 
+  usleep(100000);
+
+  // Pripojenie semaforov
+  sem_t *semServer = sem_open(semServerName, 0);
+  if (semServer == SEM_FAILED) {
+      perror("sem_open");
+      exit(EXIT_FAILURE);
+  }
+  // Vytvorenie semaforu pre klienta
+  sem_t *semKlient = sem_open(semKlientName, 0);
+  if (semKlient == SEM_FAILED) {
+      perror("sem_open");
+      exit(EXIT_FAILURE);
+  }
 
 
   if(input.vykreslenie == 1) {
+    
+    pthread_t thread;
 
+    // Vytvorenie vlákna
+    if (pthread_create(&thread, NULL, waitForCtrlD, vykreslenie) != 0) {
+        perror("Chyba pri vytváraní vlákna");
+        exit(EXIT_FAILURE);
+    }
+
+    
     usleep(500000);
     printf("Vykresluje sa 𓁹‿𓁹\n");
 
     while(vykreslenie->end == 0) {
-      // Čakanie, kým sú údaje pripravené
       int hodnota;
       sem_getvalue(semKlient, &hodnota);
-      printf("Klient semafor hodnota pred wait: %d\n", hodnota);
       sem_wait(semKlient);
-      kresli(&input, vykreslenie->mapa.opilec, vykreslenie->mapa.prekazky.pocet, &(vykreslenie->mapa.prekazky));
-      printf("Klient: x: %d, y: %d\n", vykreslenie->mapa.opilec.x, vykreslenie->mapa.opilec.y);
+      kresli(vykreslenie, 1);
       usleep(20000);
       sem_post(semServer);
-      //usleep(20000);
     }
     printf("Odišiel som z tohto pekelného loopu\n");
-
+    
+    // Čakáme na ukončenie vlákna
+    if (pthread_join(thread, NULL) != 0) {
+        perror("Chyba pri čakaní na vlákno");
+        exit(EXIT_FAILURE);
+    }
+      sem_post(semServer); // pre istotu
   }
 
   usleep(250000);
-    printf("Server: pred result open\n");
   //NACITANIE VYSLEDKOV (POCTY KOLKO KRAT SA DOSTAL DO STREDU)
     // 1. Otvorenie existujúcej zdieľanej pamäte
-    int shm_result_fd = shm_open("/sem.shared_result_RJ", O_RDONLY, 0666);
+    char menoResultu[256] = SHM_RESULT_NAME;
+    strcat(menoResultu, input.suborUlozenia);
+    memset(&menoResultu[strlen(menoResultu) - 4], 0, 4);
+    int shm_result_fd = shm_open(menoResultu, O_RDONLY, 0666);
     if (shm_result_fd == -1) {
         perror("shm_open");
         exit(EXIT_FAILURE);
     }
 
-    printf("Server: pred resultSize\n");
     // 2. Mapovanie pamäte
     size_t resultSize = (sizeof(int) * (input.maxX*2+1) * (input.maxY*2+1));
-    char *newResult = mmap(0, resultSize, PROT_READ, MAP_SHARED, shm_result_fd, 0);
+    int* newResult = mmap(0, resultSize, PROT_READ, MAP_SHARED, shm_result_fd, 0);
     if (newResult == MAP_FAILED) {
         perror("mmap");
         exit(EXIT_FAILURE);
     }
 
-    printf("Server: pred polom\n");
     // Pole na uloženie prijatých hodnôt
     int result[input.maxY*2+1][input.maxX*2+1];
     memset(result, 0, sizeof(result));
 
-    printf("Server: pred citanim\n");
     // Čítanie hodnôt zo zdielanej pamate
     for(int i = 0; i < input.maxY*2+1; i++) {
       for(int j = 0; j < input.maxX*2+1; j++) {
@@ -285,7 +397,6 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    printf("Server: vypisanim\n");
     // Vypísanie prijatých hodnôt
     for (int i = 0; i < input.maxY*2+1; i++) {
       for(int j = 0; j < input.maxX*2+1; j++) {
@@ -295,19 +406,16 @@ int main(int argc, char* argv[]) {
     }
 
 
-    printf("Server: pred oldResult\n");
   // nove vysledky
   float oldResult[input.maxY*2+1][input.maxX*2+1];
   memset(oldResult, 0, sizeof(oldResult));
 
-    printf("Server: pred zapisom\n");
   // zapisanie vysledkov do suboru:
   char cesta[300] = "../../result_files/";
   strcat(cesta, input.suborUlozenia);
   FILE *fileResultTmp = fopen(cesta, "r");
   int pocetReplikaciiBefore;
 
-    printf("Server: pred tmpFile\n");
   if(fileResultTmp == NULL) {
     pocetReplikaciiBefore = 0; // súbor neexistuje
   } else {
@@ -321,7 +429,6 @@ int main(int argc, char* argv[]) {
     fclose(fileResultTmp);
   }
 
-    printf("Server: pred fileResult\n");
   // prepísanie súboru
   FILE* fileResult;
   fileResult = fopen(cesta, "w");
@@ -337,24 +444,21 @@ int main(int argc, char* argv[]) {
     }
   fclose(fileResult);
 
-    printf("Server: pred unmap1\n");
   munmap(newResult, resultSize);
   close(shm_result_fd);
-  //unlink(newResult);
-  shm_unlink("/sem.shared_result_RJ");
 
-    printf("Server: pred unmap2\n");
+  int pocetPripojenych = vykreslenie->pocetPripojenych;
   munmap(vykreslenie, vykreslenieSize);
   close(shm_vykreslenie_fd);
-  shm_unlink(menoSimulacie);
+  if(pocetPripojenych == 1) { shm_unlink(menoSimulacie); shm_unlink(menoResultu); }
 
-    printf("Server: pred close1\n");
   // Uvoľnenie zdrojov
   sem_close(semServer);
-  sem_unlink(SEMAPHORE_SERVER_NAME);
+  sem_unlink(semServerName);
   sem_close(semKlient);
-  sem_unlink(SEMAPHORE_KLIENT_NAME);
+  sem_unlink(semKlientName);
+  
+  printf("Koniec🗿\n");
 
-    printf("Server: pred koncom\n");
   return 0;
 }

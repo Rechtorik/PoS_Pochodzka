@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <dirent.h>
 #include "../common/inputStruktura.h"
 
 // Deklarácie funkcií
@@ -12,7 +14,7 @@ void koniec();
 void simulaciaForm(Input* input);
 void opatovneSpustenieForm(Input* input);
 
-void menu(Input* input) {
+int menu(Input* input) {
   int choice;
 
   while (1) {
@@ -37,19 +39,19 @@ void menu(Input* input) {
     switch (choice) {
       case 1:
         novaSimulacia(input);
-        return;
+        return 0;
         break;
       case 2:
         pripojenieSa(input);
-        return;
+        return 0;
         break;
       case 3:
         opatovnaSimulacia(input);
-        return;
+        return 0;
         break;
       case 4:
         koniec();
-        return; // mozno dat int a return 0
+        return 1; // mozno dat int a return 0
         break;
       default:
         printf("Neplatná voľba! Skúste to znova.\n");
@@ -67,6 +69,7 @@ void novaSimulacia(Input* input) {
   printf("\n========== MENU ==========");
   printf("\n1. Generovaná mapa\n");
   printf("2. Použiť mapu zo súboru\n");
+  printf("3. Použiť prázdnu mapu\n");
   printf("==========================\n");
   printf("Zadajte svoju voľbu: ");
 
@@ -99,6 +102,10 @@ void novaSimulacia(Input* input) {
     input->mapaSubor[strcspn(input->mapaSubor, "\n")] = '\0';
     //input->mapaSubor = buffer;
     simulaciaForm(input);
+  } else if(choice2 == 3) {
+    // PRAZDNA MAPA
+    strcat(input->mapaSubor, "empty.txt");
+    simulaciaForm(input);
   }
 }
 
@@ -114,7 +121,7 @@ void opatovnaSimulacia(Input* input) {
 }
 
 void koniec() {
-  printf("Koniec formulára\n");
+  printf("Aplikácia sa ukončuje...\n");
 }
 
 
@@ -217,7 +224,7 @@ void simulaciaForm(Input* input) {
   system("clear");
   // k
   printf("\n========== MENU ==========");
-  printf("\n1. Zadaj maximálny počet krokov\n");
+  printf("\n1. Zadaj maximálny počet krokov (0 pre nekonečno)\n");
   printf("==========================\n");
   printf("Zadajte svoju voľbu: ");
 
@@ -225,6 +232,9 @@ void simulaciaForm(Input* input) {
   if (scanf("%d", &k) != 1) {
     printf("Neplatný vstup! Prosím, zadajte číslo.\n");
     while (getchar() != '\n'); // Vyčistenie bufferu
+  }
+  if(k == 0) {
+    k = INT_MAX;
   }
 
   system("clear");
@@ -244,8 +254,8 @@ void simulaciaForm(Input* input) {
   // pripojenie
   printf("\n========== MENU ==========");
   printf("\n1. Môžu sa ostatní pripojiť k simulácii?\n");
-  printf("\n   1 => áno\n");
-  printf("\n   0 => nie\n");
+  printf("   1 => áno\n");
+  printf("   0 => nie\n");
   printf("==========================\n");
   printf("Zadajte svoju voľbu: ");
 
@@ -340,8 +350,8 @@ void opatovneSpustenieForm(Input* input) {
   // pripojenie
   printf("\n========== MENU ==========");
   printf("\n1. Môžu sa ostatní pripojiť k simulácii?\n");
-  printf("\n   1 => áno\n");
-  printf("\n   0 => nie\n");
+  printf("   1 => áno\n");
+  printf("   0 => nie\n");
   printf("==========================\n");
   printf("Zadajte svoju voľbu: ");
 
@@ -354,9 +364,27 @@ void opatovneSpustenieForm(Input* input) {
   system("clear");
   // subor ulozenia
   printf("\n========== MENU ==========\n");
-  printf("Zadajte názov simulácie (.txt): ");
+  printf("Zadajte názov simulácie (.txt): \n");
   while (getchar() != '\n'); // Vyčistenie bufferu
+    
+    const char *input_dir = "../../input_files/";
+    struct dirent *entry;
 
+    // Otvorenie adresára /dev/shm
+    DIR *dir = opendir(input_dir);
+    if (dir == NULL) {
+        perror("Nepodarilo sa otvoriť /dev/shm");
+        exit(EXIT_FAILURE);
+    }
+
+    // Iterácia cez obsah adresára
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            printf("  -> %s\n", entry->d_name);
+        }
+    }
+    closedir(dir);
+    printf("\n (づ ᴗ _ᴗ)づ: ");
   // Čítanie reťazca
   if (fgets(input->suborUlozenia, 256, stdin) == NULL) {
     printf("Chyba pri čítaní vstupu.\n");
