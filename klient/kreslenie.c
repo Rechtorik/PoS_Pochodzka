@@ -6,7 +6,8 @@
 
 // Funkcia na vykreslenie mapy
 int kresli(Input* input, Suradnice player, int pocetPrekazok, Prekazky* prekazky) {
-    //system("clear"); // Vyčistenie konzoly (použi "cls" na Windows)
+    system("clear"); // Vyčistenie konzoly (použi "cls" na Windows)
+    
     for (int i = 0; i < input->maxY*2+1; i++) {
         for (int j = 0; j < input->maxX*2+1; j++) {
 
@@ -24,6 +25,7 @@ int kresli(Input* input, Suradnice player, int pocetPrekazok, Prekazky* prekazky
 
         printf("\n");
     }
+  usleep(10000);
   return 0;
 }
 
