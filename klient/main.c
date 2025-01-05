@@ -205,6 +205,8 @@ int main(int argc, char* argv[]) {
 
 
 
+
+
   // spustenie
   int statusServera = system("../server/server &"); // ampersant na to aby bezal server na pozadi
   if (statusServera == -1) {

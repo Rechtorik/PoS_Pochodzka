@@ -241,6 +241,7 @@ int main(int argc, char *argv[]){
   int fd_input = open(FIFO_INPUT, O_RDONLY);
   if (fd_input == -1) {
       perror("open");
+
       exit(EXIT_FAILURE);
   }
 
@@ -406,7 +407,6 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
   while (fscanf(mapInput, "%d %d", &px, &py) == 2) {
         if (px >= 0 && px <=2*input->maxX && py >= 0 && py <=2*input->maxY) {
             input->mapa[py][px] = 1;  // Nastav hodnotu na 1, ak sú súradnice platné
-
             printf("Server: pred zapisovanim prekazok\n");
             // JOJO PRIDAL
             prekazky.prekazky[prekazky.pocet].x = px;
@@ -471,9 +471,9 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
   }
     printf("Server: Po replikaciach\n");
 
-  //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
-
   usleep(50000);
+
+  //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
 
   printf("Pole:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     for (int y = 0; y <= 2*input->maxY; y++) {
@@ -497,9 +497,6 @@ printf("kolko krat sa dostal do stredu z %d iteracii:\n", input -> reps); //☆.
     printf("\n");
   }
 printf("KONIEC\n");
-
-
-
 
     // JOJO PRIDAL ▄︻デ══━一💥
     // float**
