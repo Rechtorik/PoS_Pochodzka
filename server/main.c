@@ -182,6 +182,7 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
                     // Kód vo while cykluse JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     if(update_shm != NULL){
                       int hodnota;
+
                       sem_getvalue(semServer, &hodnota);
                       printf("Server semafor hodnota pred wait: %d\n", hodnota);
                       sem_wait(semServer);
@@ -222,13 +223,13 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
 }
 
 int main(int argc, char *argv[]){
-
+  
  // Pripojenie k existujúcemu semaforu
     sem_t *semKlient = sem_open(SEMAPHORE_KLIENT_NAME, 0);
     if (semKlient == SEM_FAILED) {
         perror("sem_open");
         exit(EXIT_FAILURE);
-    }
+    } 
   // Pripojenie k existujúcemu semaforu
     sem_t *semServer = sem_open(SEMAPHORE_SERVER_NAME, 0);
     if (semServer == SEM_FAILED) {
@@ -241,6 +242,7 @@ int main(int argc, char *argv[]){
   int fd_input = open(FIFO_INPUT, O_RDONLY);
   if (fd_input == -1) {
       perror("open");
+
       exit(EXIT_FAILURE);
   }
 
@@ -260,7 +262,7 @@ int main(int argc, char *argv[]){
       perror("shm_open");
       exit(EXIT_FAILURE);
   }
-
+  
   size_t resultSize = sizeof(int)*((inputJojo.maxX*2+1) * (inputJojo.maxY*2+1));
   // 2. Nastavenie veľkosti zdieľanej pamäte
   if (ftruncate(shm_result_fd, resultSize) == -1) {
@@ -397,16 +399,12 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
 //꧁𝔂𝓪𝓼𝓼 𝓺𝓾𝓮𝓮𝓷꧂
 
-
-
-
   int px,py;
 
   if(!generujem) {
   while (fscanf(mapInput, "%d %d", &px, &py) == 2) {
         if (px >= 0 && px <=2*input->maxX && py >= 0 && py <=2*input->maxY) {
             input->mapa[py][px] = 1;  // Nastav hodnotu na 1, ak sú súradnice platné
-
             printf("Server: pred zapisovanim prekazok\n");
             // JOJO PRIDAL
             prekazky.prekazky[prekazky.pocet].x = px;
@@ -471,9 +469,9 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
   }
     printf("Server: Po replikaciach\n");
 
-  //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
-
   usleep(50000);
+
+  //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
 
   printf("Pole:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     for (int y = 0; y <= 2*input->maxY; y++) {
@@ -500,10 +498,10 @@ printf("KONIEC\n");
 
 
 
-
     // JOJO PRIDAL ▄︻デ══━一💥
     // float**
     // input->statPocetKrokov
+
     // Zápis hodnôt do RESULT
     for(int r = 0; r < input->maxY*2+1; r++) { // po riadkoch
       for(int s = 0; s < input->maxX; s++) {

@@ -23,8 +23,10 @@
 int main(int argc, char* argv[]) {
 
 
+
   sem_unlink(SEMAPHORE_KLIENT_NAME);
   sem_unlink(SEMAPHORE_SERVER_NAME);
+
 
   // Vytvorenie semaforu pre server
   sem_t *semServer = sem_open(SEMAPHORE_SERVER_NAME, O_CREAT, 0666, 1); // Inicializovaný na 0
@@ -202,6 +204,10 @@ int main(int argc, char* argv[]) {
         printf("FIFO už existuje: %s\n", FIFO_INPUT);
     }
 
+  
+
+
+
 
 
 
@@ -312,6 +318,7 @@ int main(int argc, char* argv[]) {
     fscanf(fileResultTmp, "%d", &pocetReplikaciiBefore);
     for(int i = 0; i < input.maxY*2+1; i++) {
       for(int j = 0; j < input.maxY*2+1; j++) {
+
         fscanf(fileResultTmp, "%f", &oldResult[i][j]);
         result[i][j] += oldResult[i][j];
       }
