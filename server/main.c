@@ -14,10 +14,11 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <semaphore.h>
-#define FIFO_RESULT "../../fifo_files/"
 #define FIFO_INPUT "../../fifo_files/input"
-#define SEMAPHORE_KLIENT_NAME "/shared_semaphore_klient_RJ"
-#define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ"
+#define SHM_RESULT_NAME "/shared_result_RJ_"
+#define SHM_VYKRESLENIE_NAME "/shared_vykreslenie_RJ_"
+#define SEMAPHORE_KLIENT_NAME "/shared_semaphore_klient_RJ_"
+#define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ_"
 
 typedef struct {
   int maxX;
@@ -153,10 +154,8 @@ void zmenPoziciu(SIMPAM *args) {
     //🩸🩸🩸🩸🩸🩸
     // Kontrola, či je nové políčko blokované //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     if (args->mapa[newY][newX] != 1) {
-      printf("Server: nova vybrata pozicia je %d %d\n", newX, newY);
       ok = true;
-
-    } else { printf("\n\n\n\n\nServer: je na prekazke\n\n\n\n\n\n\n\n"); }
+    }
   }
     // Ak pohyb nie je blokovaný, aktualizujeme súradnice //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     args->x = newX;
@@ -169,10 +168,11 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
 
             for (int r = 0; r < args->reps; r++) {
                 if(args->mapa[i][j] == 1) { break; }
+                if(args->mapa[i][j] == 2) { break; }
                 args->x = j;  // Nastavenie počiatočnej pozície
                 args->y = i;
                 int steps = 0;
-                printf("Server: ideme novu replikaciu\n");
+                //printf("Server: ideme novu replikaciu\n");
                 while (steps < args->k) {  // Maximálny počet krokov
                     // Ak sa dostaneme na cieľové políčko (hodnota 2), ukončíme pohyb
                     if (args->mapa[args->y][args->x] == 2) {
@@ -180,31 +180,36 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
                         break;
                     }
 
-                    printf("\nServer pred pohybom: x:%d y:%d\n", args->x, args->y);
+                   // printf("\nServer pred pohybom: x:%d y:%d\n", args->x, args->y);
                     // Pohyb na základe pravidiel
                     zmenPoziciu(args);
 
                     // Kód vo while cykluse JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     if(update_shm != NULL){
+                      if(update_shm->end) sem_post(semServer);
                       int hodnota;
                       sem_getvalue(semServer, &hodnota);
-                      printf("Server semafor hodnota pred wait: %d\n", hodnota);
+                      //printf("Server semafor hodnota pred wait: %d\n", hodnota);
                       sem_wait(semServer);
                       // Aktualizácia údajov
                       update_shm->mapa.opilec.x = args->x;  // Náhodná hodnota
                       update_shm->mapa.opilec.y = args->y;  // Náhodná hodnota
+                      update_shm->replikacia = r;
+                      update_shm->zacX = j;
+                      update_shm->zacY = i;
+                      
 
                       sem_post(semKlient);
                     }
-                    printf("Server: x:%d y:%d\n", args->x, args->y);
-                    printf("Server: krok cislo %d\n", steps);
-                    printf("Server: replikacia cislo %d\n", r);
-                    printf("Server: startovacia pozicia [%d][%d]\n", j, i);
+                    //printf("Server: x:%d y:%d\n", args->x, args->y);
+                    //printf("Server: krok cislo %d\n", steps);
+                    //printf("Server: replikacia cislo %d\n", r);
+                    //printf("Server: startovacia pozicia [%d][%d]\n", j, i);
                     steps++;
                 }
 
                 if (steps == args->k && args->mapa[args->y][args->x] != 2) {
-                    printf("NEDOSTAL SA na [%d][%d] po %d krokoch.\n", i, j, args->k);
+                    //printf("NEDOSTAL SA na [%d][%d] po %d krokoch.\n", i, j, args->k);
                    // args->statPocetKrokov[i][j] = 0;
                 } else {
                     totalSteps += steps;
@@ -214,7 +219,7 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
             // Vypočíta sa priemerný počet krokov pre danú počiatočnú pozíciu, ak sa niekedy dostal
             if (totalSteps > 0) {
                 double averageSteps = (double)totalSteps / args->reps;
-                printf("Startovacia pozícia [%d][%d]: Priemerný počet krokov = %.2f\n", i, j, averageSteps);
+                //printf("Startovacia pozícia [%d][%d]: Priemerný počet krokov = %.2f\n", i, j, averageSteps);
                 args->statPocetKrokov[i][j] = averageSteps;
             }
           if(args->mapa[i][j] == 1){
@@ -227,20 +232,7 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
 }
 
 int main(int argc, char *argv[]){
-
- // Pripojenie k existujúcemu semaforu
-    sem_t *semKlient = sem_open(SEMAPHORE_KLIENT_NAME, 0);
-    if (semKlient == SEM_FAILED) {
-        perror("sem_open");
-        exit(EXIT_FAILURE);
-    }
-  // Pripojenie k existujúcemu semaforu
-    sem_t *semServer = sem_open(SEMAPHORE_SERVER_NAME, 0);
-    if (semServer == SEM_FAILED) {
-        perror("sem_open");
-        exit(EXIT_FAILURE);
-    }
-
+ 
   // PRIJATIE FIFO INPUTU
   // Otvorenie FIFO na čítanie
   int fd_input = open(FIFO_INPUT, O_RDONLY);
@@ -258,16 +250,45 @@ int main(int argc, char *argv[]){
     return 1;
   }
   close(fd_input);
+  
+  char semKlientName[256] = SEMAPHORE_KLIENT_NAME;
+  strcat(semKlientName, inputJojo.suborUlozenia);
+  memset(&semKlientName[strlen(semKlientName) - 4], 0, 4);
+  char semServerName[256] = SEMAPHORE_SERVER_NAME;
+  strcat(semServerName, inputJojo.suborUlozenia);
+  memset(&semServerName[strlen(semServerName) - 4], 0, 4);
+  
+  printf("Server: meno sem je %s\n", semServerName);
+  printf("Server: meno sem je %s\n", semKlientName);
+
+  //sem_unlink(semKlientName);
+  //sem_unlink(semServerName);
+ 
+// vytvorenie semaforov
+    sem_t *semKlient = sem_open(semKlientName, O_CREAT, 0666, 0);
+    if (semKlient == SEM_FAILED) {
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
+  // Pripojenie k existujúcemu semaforu  
+    sem_t *semServer = sem_open(semServerName, O_CREAT, 0666, 1);
+    if (semServer == SEM_FAILED) {
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+    }
 
   // VYTVORENIE ZDIELANEJ PAMATE - RESULT
   // 1. Vytvorenie zdieľanej pamäte
-  int shm_result_fd = shm_open("/sem.shared_result_RJ", O_CREAT | O_RDWR, 0666);
+  char menoResultu[256] = SHM_RESULT_NAME;
+  strcat(menoResultu, inputJojo.suborUlozenia);
+  memset(&menoResultu[strlen(menoResultu) - 4], 0, 4);
+  int shm_result_fd = shm_open(menoResultu, O_CREAT | O_RDWR, 0666);
   if (shm_result_fd == -1) {
       perror("shm_open");
       exit(EXIT_FAILURE);
   }
 
-  size_t resultSize = sizeof(int)*((inputJojo.maxX*2+1) * (inputJojo.maxY*2+1));
+  size_t resultSize = sizeof(int)*((inputJojo.maxY*2+1) * (inputJojo.maxX*2+1));
   // 2. Nastavenie veľkosti zdieľanej pamäte
   if (ftruncate(shm_result_fd, resultSize) == -1) {
       perror("ftruncate");
@@ -275,7 +296,7 @@ int main(int argc, char *argv[]){
   }
 
   // 3. Mapovanie pamäte
-  int *result = mmap(0, resultSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_result_fd, 0);
+  int* result = mmap(0, resultSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_result_fd, 0);
   if (result == MAP_FAILED) {
       perror("mmap");
       exit(EXIT_FAILURE);
@@ -438,11 +459,12 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
     size_t vykreslenieSize = sizeof(Vykreslenie_shm);
 
     // Pripojenie k zdieľanej pamäti
-    printf("Server: Pred open\n");
-    char menoSimulacie[256] = "/sem.shared_vykreslenie_RJ_";
+    //printf("Server: Pred open\n");
+    char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
     strcat(menoSimulacie, inputJojo.suborUlozenia);
     memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4);
     printf("%s\n", menoSimulacie);
+
     int shm_vykreslenie_fd = shm_open(menoSimulacie, O_RDWR, 0666);
     if (shm_vykreslenie_fd == -1) {
       perror("shm_open");
@@ -450,13 +472,13 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
     }
 
     // Mapovanie pamäte
-    printf("Server: Pred mmap\n");
+    //printf("Server: Pred mmap\n");
     Vykreslenie_shm* vykreslenie = mmap(NULL, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
     if (vykreslenie == MAP_FAILED) {
       perror("mmap");
       exit(EXIT_FAILURE);
     }
-    printf("Server: Po mmap\n");
+    //printf("Server: Po mmap\n");
 
     vykreslenie->mapa.opilec.x = input->x;
     vykreslenie->mapa.opilec.y = input->y;
@@ -466,15 +488,15 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
     // ZDIELANA PAMAT - VYKRESLOVANIE UPDATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!🎨🖌️
     if(inputJojo.vykreslenie) {
       vykreslenie->end = 0;
-    printf("Server: Pred replikuj s vykreslenim\n");
+    //printf("Server: Pred replikuj s vykreslenim\n");
       replikuj(input, vykreslenie, semServer, semKlient);
       vykreslenie->end = 1;
       sem_post(semKlient);
   } else {
-    printf("Server: Pred replikuj bez vykreslenia\n");
+    //printf("Server: Pred replikuj bez vykreslenia\n");
       replikuj(input, NULL, NULL, NULL);
   }
-    printf("Server: Po replikaciach\n");
+    //printf("Server: Po replikaciach\n");
 
   usleep(50000);
 
@@ -488,15 +510,15 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
         printf("\n");
     }
   printf("Stats:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
-  for (int x = 0; x <= 2*input->maxX; x++ ) {
-    for(int y = 0; y<= 2*input->maxY; y++) {
+  for (int y = 0; y <= 2*input->maxY; y++ ) {
+    for(int x = 0; x<= 2*input->maxX; x++) {
       printf("%6.1f", input->statPocetKrokov[y][x]);
     }
     printf("\n");
   }
 printf("kolko krat sa dostal do stredu z %d iteracii:\n", input -> reps); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
-  for (int x = 0; x <= 2*input->maxX; x++ ) {
-    for(int y = 0; y<= 2*input->maxY; y++) {
+  for (int y = 0; y <= 2*input->maxY; y++ ) {
+    for(int x = 0; x<= 2*input->maxX; x++) {
       printf("%6.1f", input->dostalSaDoStredu[y][x]);
     }
     printf("\n");
@@ -508,8 +530,8 @@ printf("KONIEC\n");
     // input->statPocetKrokov
     // Zápis hodnôt do RESULT
     for(int r = 0; r < input->maxY*2+1; r++) { // po riadkoch
-      for(int s = 0; s < input->maxX; s++) {
-        result[(r*(input->maxY*2+1)) + s] = input->dostalSaDoStredu[r][s];
+      for(int s = 0; s < input->maxX*2+1; s++) {
+        result[(r*(input->maxY*2+1)) + s] = (int)input->dostalSaDoStredu[r][s];
       }
     }
 
@@ -518,7 +540,7 @@ printf("KONIEC\n");
 
     munmap(result, resultSize);
     close(shm_result_fd);
-    shm_unlink("/sem.shared_vykreslenie_RJ");
+
     sem_close(semKlient);
     sem_close(semServer);
 

@@ -12,6 +12,8 @@ typedef struct Prekazky{
 } Prekazky;
 
 typedef struct Mapa{
+  int maxX;
+  int maxY;
   Suradnice opilec; 
   Prekazky prekazky;
 } Mapa;
