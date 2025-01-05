@@ -76,7 +76,9 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
                 int noveY = prekY + j;
 
                 if (noveX > 0 && noveX < 2 * args->maxX && //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
-                    noveY > 0 && noveY < 2 * args->maxY && 
+
+                    noveY > 0 && noveY < 2 * args->maxY &&
+
                     noveX != args->maxX && noveY != args->maxY) {
                     if (args->mapa[noveY][noveX] == 1) {
                         validna = false;
@@ -126,11 +128,12 @@ int vyberSmer(void* args){
 
 void zmenPoziciu(SIMPAM *args) {
     //int posun = vyberSmer(args);  // Získanie smeru pohybu
-    
+
     int newX = args->x;
     int newY = args->y;
     bool ok = false;
-    
+
+
     while(!ok){
       int posun = vyberSmer(args);  // Získanie smeru pohybu
       newX = args->x;
@@ -178,17 +181,17 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
                     printf("\nServer pred pohybom: x:%d y:%d\n", args->x, args->y);
                     // Pohyb na základe pravidiel
                     zmenPoziciu(args);
-                    
+
                     // Kód vo while cykluse JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     if(update_shm != NULL){
-                      int hodnota; 
+                      int hodnota;
+
                       sem_getvalue(semServer, &hodnota);
                       printf("Server semafor hodnota pred wait: %d\n", hodnota);
                       sem_wait(semServer);
                       // Aktualizácia údajov
                       update_shm->mapa.opilec.x = args->x;  // Náhodná hodnota
                       update_shm->mapa.opilec.y = args->y;  // Náhodná hodnota
-                      
                       sem_post(semKlient);
                     }
                     printf("Server: x:%d y:%d\n", args->x, args->y);
@@ -397,16 +400,13 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
 //꧁𝔂𝓪𝓼𝓼 𝓺𝓾𝓮𝓮𝓷꧂
 
-
-
-  
   int px,py;
 
   if(!generujem) {
   while (fscanf(mapInput, "%d %d", &px, &py) == 2) {
         if (px >= 0 && px <=2*input->maxX && py >= 0 && py <=2*input->maxY) {
             input->mapa[py][px] = 1;  // Nastav hodnotu na 1, ak sú súradnice platné
-            
+
             printf("Server: pred zapisovanim prekazok\n");
             // JOJO PRIDAL
             prekazky.prekazky[prekazky.pocet].x = px;
@@ -423,10 +423,10 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
     int velkost = velkostMapy(input);
     printf("Veľkosť mapy: %d\n", velkost);
-    
+
 
     // V tomto momente uz mame map
-  
+
     // JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // JOJO PRIDAL ▄︻デ══━一💥
     // Veľkosť štruktúry
@@ -460,7 +460,7 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
     // ZDIELANA PAMAT - VYKRESLOVANIE UPDATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!🎨🖌️
     if(inputJojo.vykreslenie) {
-      vykreslenie->end = 0;  
+      vykreslenie->end = 0;
     printf("Server: Pred replikuj s vykreslenim\n");
       replikuj(input, vykreslenie, semServer, semKlient);
       vykreslenie->end = 1;
@@ -470,9 +470,10 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
       replikuj(input, NULL, NULL, NULL);
   }
     printf("Server: Po replikaciach\n");
-    
+
+
   //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
-   
+
   usleep(50000);
 
   printf("Pole:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
@@ -497,29 +498,29 @@ printf("kolko krat sa dostal do stredu z %d iteracii:\n", input -> reps); //☆.
     printf("\n");
   }
 printf("KONIEC\n");
-  
 
-  
 
     // JOJO PRIDAL ▄︻デ══━一💥
     // float**
-    // input->statPocetKrokov 
+    // input->statPocetKrokov
+
     // Zápis hodnôt do RESULT
     for(int r = 0; r < input->maxY*2+1; r++) { // po riadkoch
       for(int s = 0; s < input->maxX; s++) {
         result[(r*(input->maxY*2+1)) + s] = input->dostalSaDoStredu[r][s];
       }
     }
-    
+
     munmap(vykreslenie, vykreslenieSize);
     close(shm_vykreslenie_fd);
-    
+
+
     munmap(result, resultSize);
     close(shm_result_fd);
     shm_unlink("/sem.shared_vykreslenie_RJ");
     sem_close(semKlient);
     sem_close(semServer);
-    
+
   for(int p = 0; p < (2*input->maxY + 1);p++) { //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     free(input->mapa[p]);
   }

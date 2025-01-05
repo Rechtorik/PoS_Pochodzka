@@ -1,11 +1,10 @@
-#ifndef VYKRESLENIE_STRUKTURA
-#define VYKRESLENIE_STRUKTURA
+#ifndef VYKRESLENIE_STRUCT
+#define VYKRESLENIE_STRUCT
 
 typedef struct Vykreslenie_shm{
-  int end;
   Mapa mapa;
+  int end;
   int pripojenie;
-  } Vykreslenie_shm;
+} Vykreslenie_shm;
 
-#endif // VYKRESLENIE_STRUKTURA
-
+#endif // PREKAZKY

@@ -23,8 +23,11 @@
 int main(int argc, char* argv[]) {
   
 
+
+
   sem_unlink(SEMAPHORE_KLIENT_NAME);
   sem_unlink(SEMAPHORE_SERVER_NAME);
+
 
   // Vytvorenie semaforu pre server
   sem_t *semServer = sem_open(SEMAPHORE_SERVER_NAME, O_CREAT, 0666, 1); // Inicializovaný na 0
@@ -38,15 +41,15 @@ int main(int argc, char* argv[]) {
       perror("sem_open");
       exit(EXIT_FAILURE);
   }
-  
+
   // Input struktura (prazdna)
   Input input;
   memset(&input, 0, sizeof(input));
-  
+
   menu(&input);
-  
+
   // V tomto momente uz mame input z menu
- 
+
   if(input.pripojenieNaPrebiehajucu) {
     // kod na vypisanie prebiehajucich
   }
@@ -155,7 +158,7 @@ int main(int argc, char* argv[]) {
     //k
     buffer[strlen(buffer) - 1] = '\0';
     input.k = atoi(buffer);
-  
+
     fgets(buffer, sizeof(buffer), fileInput);
     //nazov simulacie
     buffer[strlen(buffer) - 1] = '\0';
@@ -205,6 +208,8 @@ int main(int argc, char* argv[]) {
   
 
 
+
+
   // spustenie
   int statusServera = system("../server/server &"); // ampersant na to aby bezal server na pozadi
   if (statusServera == -1) {
@@ -225,14 +230,14 @@ int main(int argc, char* argv[]) {
     close(fd_input);
     exit(EXIT_FAILURE);
   }
-    
+
   close(fd_input);
 
 
-  
   if(input.vykreslenie == 1) {
 
-    usleep(500000); 
+    usleep(500000);
+
     printf("Vykresluje sa 𓁹‿𓁹\n");
 
     while(vykreslenie->end == 0) {
@@ -304,21 +309,23 @@ int main(int argc, char* argv[]) {
   strcat(cesta, input.suborUlozenia);
   FILE *fileResultTmp = fopen(cesta, "r");
   int pocetReplikaciiBefore;
-  
+
     printf("Server: pred tmpFile\n");
   if(fileResultTmp == NULL) {
     pocetReplikaciiBefore = 0; // súbor neexistuje
   } else {
     fscanf(fileResultTmp, "%d", &pocetReplikaciiBefore);
     for(int i = 0; i < input.maxY*2+1; i++) {
-      for(int j = 0; j < input.maxY*2+1; j++) {  
+
+      for(int j = 0; j < input.maxY*2+1; j++) {
+
         fscanf(fileResultTmp, "%f", &oldResult[i][j]);
         result[i][j] += oldResult[i][j];
       }
     }
     fclose(fileResultTmp);
   }
-  
+
     printf("Server: pred fileResult\n");
   // prepísanie súboru
   FILE* fileResult;
@@ -352,7 +359,7 @@ int main(int argc, char* argv[]) {
   sem_unlink(SEMAPHORE_SERVER_NAME);
   sem_close(semKlient);
   sem_unlink(SEMAPHORE_KLIENT_NAME);
-  
+
     printf("Server: pred koncom\n");
   return 0;
 }
