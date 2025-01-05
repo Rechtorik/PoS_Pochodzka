@@ -52,7 +52,12 @@ int velkostMapy(SIMPAM* args) {
 void generujMapu(SIMPAM* args, Prekazky* prekazky) {
 
     int napocitavanie = 0;
-    int pocetPrekazok = rand() % (args->maxX + args->maxY);
+    int pocetPrekazok = 0;
+    if(args->maxY < 2 || args->maxX < 2) {
+      pocetPrekazok = 0;
+  } else {
+      pocetPrekazok = rand() % ((args->maxX*args->maxY)/2);
+  }
 
      while(napocitavanie < pocetPrekazok) {
 

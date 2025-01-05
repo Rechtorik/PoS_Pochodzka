@@ -6,6 +6,7 @@
 #include "../common/vykreslenieStruct.h"
 
 // Funkcia na vykreslenie mapy
+
 int kresli(Vykreslenie_shm* vykreslenie, int tvorca) {
     system("clear"); // Vyčistenie konzoly
     printf("Replikácia %d / %d\n", vykreslenie->replikacia + 1, vykreslenie->pocetReplikacii);
@@ -28,6 +29,7 @@ int kresli(Vykreslenie_shm* vykreslenie, int tvorca) {
 
         printf("\n");
     }
+
     if(tvorca) printf("\nPre ukončenie vizualizácie stlačte 'k' a potom ENTER\n");
     usleep(300000);
   return 0;
