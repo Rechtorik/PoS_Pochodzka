@@ -32,7 +32,6 @@ int velkostMapy(SIMPAM* args) {
 
 }
 
-
 int main(int argc, char *argv[]){
  
   // PRIJATIE FIFO INPUTU

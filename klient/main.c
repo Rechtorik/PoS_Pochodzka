@@ -48,17 +48,6 @@ void *waitForK(void *arg) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 int main(int argc, char* argv[]) {
 
   // Input struktura (prazdna)
@@ -127,7 +116,6 @@ int main(int argc, char* argv[]) {
     }
 
 
-    
     
     if(vykreslenie->pripojenie) {
         pthread_t thread;
