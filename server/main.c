@@ -51,18 +51,25 @@ int velkostMapy(SIMPAM* args) {
 }
 void generujMapu(SIMPAM* args, Prekazky* prekazky) {
 
+
+    int pocetPokusov = 0; // 10 pokusov na najdenie miesta
     int napocitavanie = 0;
     int pocetPrekazok = 0;
     if(args->maxY < 2 || args->maxX < 2) {
       pocetPrekazok = 0;
   } else {
-      pocetPrekazok = rand() % ((args->maxX*args->maxY)/2);
+      pocetPrekazok = ((args->maxX*args->maxY)/2);//rand() % ((args->maxX*args->maxY)/2);
   }
 
-     while(napocitavanie < pocetPrekazok) {
+     while((napocitavanie < pocetPrekazok) && (pocetPokusov < 10)) {
 
         int prekX = rand() % (2 * args->maxX + 1);
         int prekY = rand() % (2 * args->maxY + 1);
+        printf("Pocet prekazok %d\n", pocetPrekazok);
+        printf("x %d\n", prekX);
+        printf("y %d\n", prekY);
+        printf("napocitavanie %d\n", napocitavanie);
+        
 
      /* while (prekX < 0 || prekX > 2 * args->maxX || prekY < 0 || prekY > 2 * args->maxY) { //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
             printf("Generated invalid index prekX=%d, prekY=%d\n", prekX, prekY);
@@ -81,11 +88,13 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
 
                 if (noveX > 0 && noveX < 2 * args->maxX && //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
                     noveY > 0 && noveY < 2 * args->maxY &&
-                    noveX != args->maxX && noveY != args->maxY) {
+                    !(noveX == args->maxX && noveY == args->maxY)) {
                     if (args->mapa[noveY][noveX] == 1) {
                         validna = false;
                         break;
                     }
+                } else { 
+                  validna = false;
                 }
             }
             if (!validna) break;
@@ -93,6 +102,7 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
 
         // Ak je pozícia validná, pridaj prekážku
         if (validna) {
+            pocetPokusov = 0;
             args->mapa[prekY][prekX] = 1;
             napocitavanie++;
             //printf("Prekazky: %d %d\n",prekX,prekY);
@@ -100,7 +110,7 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
             prekazky->prekazky[prekazky->pocet].x = prekX;
             prekazky->prekazky[prekazky->pocet].y = prekY;
             prekazky->pocet++;
-        }
+        } else { pocetPokusov++; }
   }
 }
 
@@ -193,6 +203,8 @@ void replikuj(SIMPAM *args, Vykreslenie_shm* update_shm, sem_t* semServer, sem_t
                       update_shm->replikacia = r;
                       update_shm->zacX = j;
                       update_shm->zacY = i;
+                      update_shm->k = args->k;
+                      update_shm->pocetKrokov = steps;
                       
 
                       sem_post(semKlient);

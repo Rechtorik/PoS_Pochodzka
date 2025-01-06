@@ -11,7 +11,8 @@ int kresli(Vykreslenie_shm* vykreslenie, int tvorca) {
     system("clear"); // Vyčistenie konzoly
     printf("Počet sledovateľov:  %d\n", vykreslenie->pocetPripojenych);
     printf("Replikácia: %d / %d\n", vykreslenie->replikacia + 1, vykreslenie->pocetReplikacii);
-    printf("Počiatočná pozícia: [%d][%d]\n\n", vykreslenie->zacX, vykreslenie->zacY);
+    printf("Počiatočná pozícia: [%d][%d]\n", vykreslenie->zacX, vykreslenie->zacY);
+    printf("Krok: %d/%d\n\n", vykreslenie->pocetKrokov + 1, vykreslenie->k);
 
     for (int i = 0; i < vykreslenie->mapa.maxY*2+1; i++) {
         for (int j = 0; j < vykreslenie->mapa.maxX*2+1; j++) {
