@@ -8,6 +8,8 @@ typedef struct Vykreslenie_shm{
   int pocetPripojenych;
   int replikacia;
   int pocetReplikacii;
+  int k;
+  int pocetKrokov;
   int zacX;
   int zacY;
 } Vykreslenie_shm;
