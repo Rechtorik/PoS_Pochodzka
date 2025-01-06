@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
 
     if(strcmp(nazovSimulacie, "exit") == 0) { printf("Aplikácia sa ukončuje...\n"); return 0; }
     
-    //Pripojenie sa na zdielanun pamat
+    //Pripojenie sa na zdielanu pamat
     char menoVykreslenia[256] = SHM_VYKRESLENIE_NAME;
     strcat(menoVykreslenia, nazovSimulacie);
 
@@ -137,6 +137,7 @@ int main(int argc, char* argv[]) {
             perror("Chyba pri vytváraní vlákna");
             exit(EXIT_FAILURE);
         }
+
         proces_vykreslenie = 1;
         //vykreslenie->pocetPripojenych++;
         while(proces_vykreslenie && vykreslenie->end == 0) {
