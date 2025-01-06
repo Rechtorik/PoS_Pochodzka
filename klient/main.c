@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     //Pripojenie sa na zdielanu pamat
     char menoVykreslenia[256] = SHM_VYKRESLENIE_NAME;
     strcat(menoVykreslenia, nazovSimulacie);
-    printf("meno je %s\n", menoVykreslenia);
+
     int shm_vykreslenie_fd = shm_open(menoVykreslenia, O_RDONLY, 0666);
     if (shm_vykreslenie_fd == -1) {
         perror("shm_open");
@@ -138,8 +138,8 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         }
 
-        //vykreslenie->pocetPripojenych++;
         proces_vykreslenie = 1;
+        //vykreslenie->pocetPripojenych++;
         while(proces_vykreslenie && vykreslenie->end == 0) {
         kresli(vykreslenie, 0);
         }
@@ -152,37 +152,15 @@ int main(int argc, char* argv[]) {
       printf("Na túto simuláciu nieje dovolené pripojenie!\n");
     }
 
-    
+    // Odmapovanie a zatvorenie
+    munmap(vykreslenie, vykreslenieSize);
+    close(shm_vykreslenie_fd);
 
     return 0; //                                                      🔄🔌
   }
 
 
-  // ZDIELANA PAMAT - VYKRESLENIE
-  //Otvorenie zdieľanej pamäte
-  char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
-  strcat(menoSimulacie, input.suborUlozenia);
-  memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4); // odstranenie .txt
-  //printf("%s\n", menoSimulacie);
-  int shm_vykreslenie_fd = shm_open(menoSimulacie, O_CREAT | O_RDWR, 0666);
-  if (shm_vykreslenie_fd == -1) {
-      perror("shm_open");
-      exit(EXIT_FAILURE);
-  }
-  size_t vykreslenieSize = sizeof(Vykreslenie_shm);
-  // Nastavenie veľkosti zdieľanej pamäte
-  if (ftruncate(shm_vykreslenie_fd, vykreslenieSize) == -1) {
-      perror("ftruncate");
-      exit(EXIT_FAILURE);
-  }
-  // Mapovanie pamäte
-  Vykreslenie_shm *vykreslenie = mmap(NULL, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
-  if (vykreslenie == MAP_FAILED) {
-    perror("mmap");
-      exit(EXIT_FAILURE);
-  }
-  vykreslenie->pripojenie = input.pripojenie;
-  vykreslenie->pocetPripojenych++;
+  
 
   // VYTVORENIE TEXTAKU NA INPUT
   if(input.opatovneSpustenie == 0) { // NOVA SIMULACIA
@@ -305,9 +283,7 @@ int main(int argc, char* argv[]) {
   // V tomto momente uz mame naplnenu strukturu isto isto (nacitavanie zo suboru)
   // Uz vieme co ideme robit, len to treba spravit
 
-  vykreslenie->mapa.maxX = input.maxX;
-  vykreslenie->mapa.maxY = input.maxY;
-  vykreslenie->pocetReplikacii = input.pocetReplikacii;
+  
 
   // FIFO INPUT vytvorenie
   // Skontroluj, či FIFO existuje
@@ -342,6 +318,33 @@ int main(int argc, char* argv[]) {
   }
 
   close(fd_input);
+  
+  usleep(100000); // cakanie pokym server vytvori vykreslenie
+    
+  // ZDIELANA PAMAT - VYKRESLENIE
+  //Otvorenie zdieľanej pamäte
+  char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
+  strcat(menoSimulacie, input.suborUlozenia);
+  memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4); // odstranenie .txt
+  //printf("%s\n", menoSimulacie);
+  int shm_vykreslenie_fd = shm_open(menoSimulacie, O_RDWR, 0666);
+  if (shm_vykreslenie_fd == -1) {
+      perror("shm_open");
+      exit(EXIT_FAILURE);
+  }
+
+  size_t vykreslenieSize = sizeof(Vykreslenie_shm);
+  // Mapovanie pamäte
+  Vykreslenie_shm *vykreslenie = mmap(NULL, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
+  if (vykreslenie == MAP_FAILED) {
+    perror("mmap");
+      exit(EXIT_FAILURE);
+  }
+  vykreslenie->pocetPripojenych++;
+  
+  vykreslenie->mapa.maxX = input.maxX;
+  vykreslenie->mapa.maxY = input.maxY;
+  vykreslenie->pocetReplikacii = input.pocetReplikacii;
   
   char semKlientName[256] = SEMAPHORE_KLIENT_NAME;
   strcat(semKlientName, input.suborUlozenia);

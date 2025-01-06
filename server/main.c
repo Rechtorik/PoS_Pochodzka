@@ -246,6 +246,38 @@ int main(int argc, char *argv[]){
     return 1;
   }
   close(fd_input);
+
+  // Pripojenie k zdieľanej pamäti
+  //printf("Server: Pred open\n");
+  char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
+  strcat(menoSimulacie, inputJojo.suborUlozenia);
+  memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4);
+  //printf("%s\n", menoSimulacie);
+
+  int shm_vykreslenie_fd = shm_open(menoSimulacie, O_CREAT | O_RDWR, 0666);
+  if (shm_vykreslenie_fd == -1) {
+    perror("shm_open");
+    exit(EXIT_FAILURE);
+  }
+
+  size_t vykreslenieSize = sizeof(Vykreslenie_shm);
+  if(ftruncate(shm_vykreslenie_fd, vykreslenieSize) == -1) {
+    perror("ftruncate");
+    exit(EXIT_FAILURE);
+  }
+
+  // Mapovanie pamäte
+  //printf("Server: Pred mmap\n");
+  Vykreslenie_shm* vykreslenie = mmap(NULL, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
+  if (vykreslenie == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+  //printf("Server: Po mmap\n");
+  vykreslenie->pripojenie = inputJojo.pripojenie;
+  vykreslenie->mapa.maxX = inputJojo.maxX;
+  vykreslenie->mapa.maxY = inputJojo.maxY;
+  vykreslenie->pocetReplikacii = inputJojo.pocetReplikacii;
   
   char semKlientName[256] = SEMAPHORE_KLIENT_NAME;
   strcat(semKlientName, inputJojo.suborUlozenia);
@@ -449,30 +481,7 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
     // JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // JOJO PRIDAL ▄︻デ══━一💥
-    // Veľkosť štruktúry
-    size_t vykreslenieSize = sizeof(Vykreslenie_shm);
-
-    // Pripojenie k zdieľanej pamäti
-    //printf("Server: Pred open\n");
-    char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
-    strcat(menoSimulacie, inputJojo.suborUlozenia);
-    memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4);
-    //printf("%s\n", menoSimulacie);
-
-    int shm_vykreslenie_fd = shm_open(menoSimulacie, O_RDWR, 0666);
-    if (shm_vykreslenie_fd == -1) {
-      perror("shm_open");
-      exit(EXIT_FAILURE);
-    }
-
-    // Mapovanie pamäte
-    //printf("Server: Pred mmap\n");
-    Vykreslenie_shm* vykreslenie = mmap(NULL, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
-    if (vykreslenie == MAP_FAILED) {
-      perror("mmap");
-      exit(EXIT_FAILURE);
-    }
-    //printf("Server: Po mmap\n");
+    
 
     vykreslenie->mapa.opilec.x = input->x;
     vykreslenie->mapa.opilec.y = input->y;
