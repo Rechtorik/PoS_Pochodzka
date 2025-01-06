@@ -23,7 +23,7 @@
 #define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ_"
 
 
-int proces_vykreslenie = 1;
+int proces_vykreslenie = 0;
 
 // Funkcia vlákna na ukončenie výstupu
 void *waitForK(void *arg) {
@@ -33,8 +33,9 @@ void *waitForK(void *arg) {
     while (par->end == 0) {  // Pokračuje, kým end nie je 1
         ch = getchar();
         if (ch == 'k') {  // Detekcia CTRL+D
-            if(par->pocetPripojenych > 1) {
-                par->pocetPripojenych--;
+            //if(par->pocetPripojenych > 1) {
+            if(proces_vykreslenie) {
+                //par->pocetPripojenych--;
                 proces_vykreslenie = 0;
             } else {
                 par->end = 1; // Nastavenie end na 1
@@ -108,17 +109,18 @@ int main(int argc, char* argv[]) {
 
     if(strcmp(nazovSimulacie, "exit") == 0) { printf("Aplikácia sa ukončuje...\n"); return 0; }
     
-    //Pripojenie sa na zdielanun pamat
+    //Pripojenie sa na zdielanu pamat
     char menoVykreslenia[256] = SHM_VYKRESLENIE_NAME;
     strcat(menoVykreslenia, nazovSimulacie);
-    int shm_vykreslenie_fd = shm_open(menoVykreslenia, O_RDWR, 0666);
+    printf("meno je %s\n", menoVykreslenia);
+    int shm_vykreslenie_fd = shm_open(menoVykreslenia, O_RDONLY, 0666);
     if (shm_vykreslenie_fd == -1) {
         perror("shm_open");
         exit(EXIT_FAILURE);
     }
 
     size_t vykreslenieSize = sizeof(Vykreslenie_shm);
-    Vykreslenie_shm* vykreslenie = mmap(0, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
+    Vykreslenie_shm* vykreslenie = mmap(0, vykreslenieSize, PROT_READ, MAP_SHARED, shm_vykreslenie_fd, 0);
     if (vykreslenie == MAP_FAILED) {
         perror("mmap");
         exit(EXIT_FAILURE);
@@ -136,7 +138,8 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         }
 
-        vykreslenie->pocetPripojenych++;
+        //vykreslenie->pocetPripojenych++;
+        proces_vykreslenie = 1;
         while(proces_vykreslenie && vykreslenie->end == 0) {
         kresli(vykreslenie, 0);
         }
