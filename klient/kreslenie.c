@@ -9,8 +9,9 @@
 
 int kresli(Vykreslenie_shm* vykreslenie, int tvorca) {
     system("clear"); // Vyčistenie konzoly
-    printf("Replikácia %d / %d\n", vykreslenie->replikacia + 1, vykreslenie->pocetReplikacii);
-    printf("Počiatočná pozícia [%d][%d]\n\n", vykreslenie->zacX, vykreslenie->zacY);
+    printf("Počet sledovateľov:  %d\n", vykreslenie->pocetPripojenych);
+    printf("Replikácia: %d / %d\n", vykreslenie->replikacia + 1, vykreslenie->pocetReplikacii);
+    printf("Počiatočná pozícia: [%d][%d]\n\n", vykreslenie->zacX, vykreslenie->zacY);
 
     for (int i = 0; i < vykreslenie->mapa.maxY*2+1; i++) {
         for (int j = 0; j < vykreslenie->mapa.maxX*2+1; j++) {
@@ -30,7 +31,12 @@ int kresli(Vykreslenie_shm* vykreslenie, int tvorca) {
         printf("\n");
     }
 
-    if(tvorca) printf("\nPre ukončenie vizualizácie stlačte 'k' a potom ENTER\n");
+    if(tvorca) {
+      printf("\nPre ukončenie vizualizácie stlačte 'k' a potom ENTER\n");
+    } else {
+      printf("\nSte v režime sledovania simulácie, pre ukončenie stlačte 'k' a potom ENTER\n");
+      
+    }
     usleep(300000);
   return 0;
 }

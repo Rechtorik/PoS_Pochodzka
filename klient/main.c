@@ -23,15 +23,22 @@
 #define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ_"
 
 
+int proces_vykreslenie = 1;
+
 // Funkcia vlákna na ukončenie výstupu
-void *waitForCtrlD(void *arg) {
+void *waitForK(void *arg) {
     Vykreslenie_shm* par = (Vykreslenie_shm*)arg;
 
     int ch;
     while (par->end == 0) {  // Pokračuje, kým end nie je 1
         ch = getchar();
         if (ch == 'k') {  // Detekcia CTRL+D
-            par->end = 1; // Nastavenie end na 1
+            if(par->pocetPripojenych > 1) {
+                par->pocetPripojenych--;
+                proces_vykreslenie = 0;
+            } else {
+                par->end = 1; // Nastavenie end na 1
+            }
             break;        // Ukončenie cyklu
         }
     }
@@ -84,13 +91,13 @@ int main(int argc, char* argv[]) {
         char* retazec = NULL;
         retazec = strstr(entry->d_name, "vykreslenie_RJ");
         if (retazec != NULL) {
-            printf("%s\n", retazec + 15); // Vypíše len záznamy obsahujúce "vykreslenie"
+            printf("  -> %s\n", retazec + sizeof("vykreslenie_RJ")); // Vypíše len záznamy obsahujúce "vykreslenie"
         }
 
     }
     closedir(dir);
 
-    printf("Zadajte názov simulácie, na ktorú sa chcete pripojiť: \n");
+    printf("\nZadajte názov simulácie, na ktorú sa chcete pripojiť: \n\n");
     char nazovSimulacie[256];
     memset(nazovSimulacie, 0, sizeof(nazovSimulacie));
     
@@ -104,26 +111,45 @@ int main(int argc, char* argv[]) {
     //Pripojenie sa na zdielanun pamat
     char menoVykreslenia[256] = SHM_VYKRESLENIE_NAME;
     strcat(menoVykreslenia, nazovSimulacie);
-    int shm_vykreslenie_fd = shm_open(menoVykreslenia, O_RDONLY, 0666);
+    int shm_vykreslenie_fd = shm_open(menoVykreslenia, O_RDWR, 0666);
     if (shm_vykreslenie_fd == -1) {
         perror("shm_open");
         exit(EXIT_FAILURE);
     }
 
     size_t vykreslenieSize = sizeof(Vykreslenie_shm);
-    Vykreslenie_shm* vykreslenie = mmap(0, vykreslenieSize, PROT_READ, MAP_SHARED, shm_vykreslenie_fd, 0);
+    Vykreslenie_shm* vykreslenie = mmap(0, vykreslenieSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_vykreslenie_fd, 0);
     if (vykreslenie == MAP_FAILED) {
         perror("mmap");
         exit(EXIT_FAILURE);
     }
+
+
+    
     
     if(vykreslenie->pripojenie) {
-        while(vykreslenie->end == 0) {
+        pthread_t thread;
+
+        // Vytvorenie vlákna
+        if (pthread_create(&thread, NULL, waitForK, vykreslenie) != 0) {
+            perror("Chyba pri vytváraní vlákna");
+            exit(EXIT_FAILURE);
+        }
+
+        vykreslenie->pocetPripojenych++;
+        while(proces_vykreslenie && vykreslenie->end == 0) {
         kresli(vykreslenie, 0);
-      }
+        }
+        // Čakáme na ukončenie vlákna
+        if (pthread_join(thread, NULL) != 0) {
+            perror("Chyba pri čakaní na vlákno");
+            exit(EXIT_FAILURE);
+        }
     } else {
       printf("Na túto simuláciu nieje dovolené pripojenie!\n");
     }
+
+    
 
     return 0; //                                                      🔄🔌
   }
@@ -134,7 +160,7 @@ int main(int argc, char* argv[]) {
   char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
   strcat(menoSimulacie, input.suborUlozenia);
   memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4); // odstranenie .txt
-  printf("%s\n", menoSimulacie);
+  //printf("%s\n", menoSimulacie);
   int shm_vykreslenie_fd = shm_open(menoSimulacie, O_CREAT | O_RDWR, 0666);
   if (shm_vykreslenie_fd == -1) {
       perror("shm_open");
@@ -254,6 +280,7 @@ int main(int argc, char* argv[]) {
   }
 
   // debug
+  /*
   printf("Veľkosť mapy je: %d\n", (input.maxX*2+1) * (input.maxY*2+1));
   printf("Nazov mapy je: %s \n", input.mapaSubor);
   printf("Dlzka nazva mapy: %d \n", (int)strlen(input.mapaSubor));
@@ -269,6 +296,8 @@ int main(int argc, char* argv[]) {
   printf("pocet replikacii: %d\n", input.pocetReplikacii);
   printf("mozu sa ostatni pripojit: %d\n", input.pripojenie);
   printf("Zapnute vykreslenie: %d\n", input.vykreslenie);
+*/
+  
 
   // V tomto momente uz mame naplnenu strukturu isto isto (nacitavanie zo suboru)
   // Uz vieme co ideme robit, len to treba spravit
@@ -339,24 +368,22 @@ int main(int argc, char* argv[]) {
     pthread_t thread;
 
     // Vytvorenie vlákna
-    if (pthread_create(&thread, NULL, waitForCtrlD, vykreslenie) != 0) {
+    if (pthread_create(&thread, NULL, waitForK, vykreslenie) != 0) {
         perror("Chyba pri vytváraní vlákna");
         exit(EXIT_FAILURE);
     }
 
     
     usleep(500000);
-    printf("Vykresluje sa 𓁹‿𓁹\n");
+    //printf("Vykresluje sa 𓁹‿𓁹\n");
 
     while(vykreslenie->end == 0) {
-      int hodnota;
-      sem_getvalue(semKlient, &hodnota);
       sem_wait(semKlient);
       kresli(vykreslenie, 1);
       usleep(20000);
       sem_post(semServer);
     }
-    printf("Odišiel som z tohto pekelného loopu\n");
+    //printf("Odišiel som z tohto pekelného loopu\n");
     
     // Čakáme na ukončenie vlákna
     if (pthread_join(thread, NULL) != 0) {
@@ -397,10 +424,12 @@ int main(int argc, char* argv[]) {
       }
     }
 
+
+    printf("\nPočty úspešných replikácií z %d replikácií:\n", input.pocetReplikacii);
     // Vypísanie prijatých hodnôt
     for (int i = 0; i < input.maxY*2+1; i++) {
       for(int j = 0; j < input.maxX*2+1; j++) {
-        printf("%6d ", result[i][j]);
+        printf("%3d ", result[i][j]);
       }
       printf("\n");
     }

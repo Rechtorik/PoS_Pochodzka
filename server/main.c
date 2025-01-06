@@ -72,8 +72,6 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
         }*/
         bool validna = true;
 
-            printf("Server tu sa dostat musi\n");
-
         // Kontrola okolia
         for (int i = -1; i <= 1; i++) { // kontroluje okolie x //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
             for (int j = -1; j <= 1; j++) { // detto pre y
@@ -93,13 +91,11 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
             if (!validna) break;
         }
 
-            printf("Server po kontrole okolia\n");
-
         // Ak je pozícia validná, pridaj prekážku
         if (validna) {
             args->mapa[prekY][prekX] = 1;
             napocitavanie++;
-            printf("Prekazky: %d %d\n",prekX,prekY);
+            //printf("Prekazky: %d %d\n",prekX,prekY);
 
             prekazky->prekazky[prekazky->pocet].x = prekX;
             prekazky->prekazky[prekazky->pocet].y = prekY;
@@ -258,8 +254,8 @@ int main(int argc, char *argv[]){
   strcat(semServerName, inputJojo.suborUlozenia);
   memset(&semServerName[strlen(semServerName) - 4], 0, 4);
   
-  printf("Server: meno sem je %s\n", semServerName);
-  printf("Server: meno sem je %s\n", semKlientName);
+  //printf("Server: meno sem je %s\n", semServerName);
+  //printf("Server: meno sem je %s\n", semKlientName);
 
   //sem_unlink(semKlientName);
   //sem_unlink(semServerName);
@@ -381,7 +377,6 @@ int main(int argc, char *argv[]){
     }
 
 
-  printf("Server: pred prekazkami\n");
   // JOJO PRIDAL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // JOJO PRIDAL ▄︻デ══━一💥
   Prekazky prekazky;
@@ -433,22 +428,21 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
   while (fscanf(mapInput, "%d %d", &px, &py) == 2) {
         if (px >= 0 && px <=2*input->maxX && py >= 0 && py <=2*input->maxY) {
             input->mapa[py][px] = 1;  // Nastav hodnotu na 1, ak sú súradnice platné
-            printf("Server: pred zapisovanim prekazok\n");
             // JOJO PRIDAL
             prekazky.prekazky[prekazky.pocet].x = px;
             prekazky.prekazky[prekazky.pocet].y = py;
             prekazky.pocet++;
-            printf("Server: po zapisovani prekazok\n");
         } else {
-            printf("Súradnice (%d, %d) sú mimo rozsah!\n", py, px);
+            //printf("Súradnice (%d, %d) sú mimo rozsah!\n", py, px);
         }
     }
   } // aby nepada ak je vacsi subor ako mapa
 
     input->mapa[input->maxY][input->maxX] = 2;
 
-    int velkost = velkostMapy(input);
-    printf("Veľkosť mapy: %d\n", velkost);
+    //int velkost = velkostMapy(input);
+    //printf("Veľkosť mapy: %d\n", velkost);
+
 
 
     // V tomto momente uz mame map
@@ -463,7 +457,7 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
     char menoSimulacie[256] = SHM_VYKRESLENIE_NAME;
     strcat(menoSimulacie, inputJojo.suborUlozenia);
     memset(&menoSimulacie[strlen(menoSimulacie)-4], 0, 4);
-    printf("%s\n", menoSimulacie);
+    //printf("%s\n", menoSimulacie);
 
     int shm_vykreslenie_fd = shm_open(menoSimulacie, O_RDWR, 0666);
     if (shm_vykreslenie_fd == -1) {
@@ -502,28 +496,28 @@ for (int i = 0; i < 2 * input->maxY + 1; i++) { // ☆.𓋼𓍊 𓆏 𓍊𓋼�
 
   //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
 
-  printf("Pole:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
+  /*printf("Mapa:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     for (int y = 0; y <= 2*input->maxY; y++) {
         for (int x = 0; x <= 2*input-> maxX; x++) {
             printf("%d ", input->mapa[y][x]);
         }
         printf("\n");
-    }
-  printf("Stats:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
+    }*/
+  printf("Priemerné počty krokov do stredu:\n"); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
   for (int y = 0; y <= 2*input->maxY; y++ ) {
     for(int x = 0; x<= 2*input->maxX; x++) {
       printf("%6.1f", input->statPocetKrokov[y][x]);
     }
     printf("\n");
-  }
-printf("kolko krat sa dostal do stredu z %d iteracii:\n", input -> reps); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
+  }/*
+printf("Počty úspešných replikácií z %d replikácií:\n", input -> reps); //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
   for (int y = 0; y <= 2*input->maxY; y++ ) {
     for(int x = 0; x<= 2*input->maxX; x++) {
       printf("%6.1f", input->dostalSaDoStredu[y][x]);
     }
     printf("\n");
-  }
-printf("KONIEC\n");
+  }*/
+//printf("KONIEC\n");
 
     // JOJO PRIDAL ▄︻デ══━一💥
     // float**
@@ -554,13 +548,13 @@ printf("KONIEC\n");
  for(int p = 0; p < (2*input->maxY + 1);p++) { //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     free(input->dostalSaDoStredu[p]);
   }
-  printf("KONIEC\n");
+  //printf("KONIEC\n");
   free(input->dostalSaDoStredu);
   free(input->statPocetKrokov);
   free(input->mapa);
   free(input);
   if(!generujem){
   fclose(mapInput);}
-  printf("KONIEC\n");
+  //printf("KONIEC\n");
   return 0;
 }
