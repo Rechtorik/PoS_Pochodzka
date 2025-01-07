@@ -266,7 +266,7 @@ void simulaciaForm(Input* input) {
   }
 
   system("clear");
-  // pripojenie
+  // vykreslenie
   printf("\n========== MENU ==========");
   printf("\n1. Chcete vykresliť priebeh?\n");
   printf("   1 => áno\n");
@@ -391,7 +391,7 @@ void opatovneSpustenieForm(Input* input) {
   }
 
   system("clear");
-  // pripojenie
+  // vykreslenie
   printf("\n========== MENU ==========");
   printf("\n1. Chcete vykresliť priebeh?\n");
   printf("   1 => áno\n");

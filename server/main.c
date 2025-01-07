@@ -78,6 +78,28 @@ int main(int argc, char *argv[]){
     perror("mmap");
     exit(EXIT_FAILURE);
   }
+
+  
+  // priprava mutexu
+  // Inicializácia mutexu s PTHREAD_PROCESS_SHARED
+  pthread_mutexattr_t attrSemafory;
+  pthread_mutexattr_init(&attrSemafory);
+  pthread_mutexattr_setpshared(&attrSemafory, PTHREAD_PROCESS_SHARED);
+  pthread_mutex_init(&vykreslenie->mutexSemafory, &attrSemafory);
+  
+  pthread_mutexattr_t attrResult;
+  pthread_mutexattr_init(&attrResult);
+  pthread_mutexattr_setpshared(&attrResult, PTHREAD_PROCESS_SHARED);
+  pthread_mutex_init(&vykreslenie->mutexResult, &attrResult);
+
+
+  pthread_mutex_lock(&vykreslenie->mutexSemafory); // zamknutie mutexu na vytvorenie semaforov a vykreslenia
+  pthread_mutex_lock(&vykreslenie->mutexResult); // zamknutie mutexu na vytvorenie semaforov a vykreslenia
+
+
+
+
+
   //printf("Server: Po mmap\n");
   vykreslenie->pripojenie = inputJojo.pripojenie;
   vykreslenie->mapa.maxX = inputJojo.maxX;
@@ -110,6 +132,18 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
+  
+
+
+
+  pthread_mutex_unlock(&vykreslenie->mutexSemafory);
+  
+
+
+
+
+
+
   // VYTVORENIE ZDIELANEJ PAMATE - RESULT
   // 1. Vytvorenie zdieľanej pamäte
   char menoResultu[256] = SHM_RESULT_NAME;
@@ -135,6 +169,7 @@ int main(int argc, char *argv[]){
       exit(EXIT_FAILURE);
   }
 
+    
     //char cestaMapa[300] = "../../map_files/";
     //strcat(cestaMapa, inputJojo->mapaSubor);
     //printf("Server cesta mapy: %s\n", cestaMapa);
@@ -268,20 +303,37 @@ int main(int argc, char *argv[]){
     vykreslenie->mapa.prekazky = prekazky;
 
 
+
+
+
+
+
+  //pthread_mutex_lock(&vykreslenie->mutex);
+    
+
+
+
+
+
+
+
+
     // ZDIELANA PAMAT - VYKRESLOVANIE UPDATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!🎨🖌️
     if(inputJojo.vykreslenie) {
-      vykreslenie->end = 0;
+      
+    vykreslenie->end = 0;
     //printf("Server: Pred replikuj s vykreslenim\n");
       replikuj(input, vykreslenie, semServer, semKlient);
       vykreslenie->end = 1;
       sem_post(semKlient);
+    
   } else {
     //printf("Server: Pred replikuj bez vykreslenia\n");
       replikuj(input, NULL, NULL, NULL);
   }
     //printf("Server: Po replikaciach\n");
 
-  usleep(50000);
+  //usleep(50000);
 
   //🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻🐻
 
@@ -318,6 +370,20 @@ printf("Počty úspešných replikácií z %d replikácií:\n", input -> reps); 
       }
     }
 
+
+
+
+
+  pthread_mutex_unlock(&vykreslenie->mutexResult);
+
+
+
+
+
+
+
+
+    // čistenie po klientovi
     munmap(vykreslenie, vykreslenieSize);
     close(shm_vykreslenie_fd);
 
@@ -327,6 +393,10 @@ printf("Počty úspešných replikácií z %d replikácií:\n", input -> reps); 
     sem_close(semKlient);
     sem_close(semServer);
 
+    pthread_mutexattr_destroy(&attrSemafory);
+    pthread_mutexattr_destroy(&attrResult);
+
+  // čistenie po serveri
   for(int p = 0; p < (2*input->maxY + 1);p++) { //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
     free(input->mapa[p]);
   }
