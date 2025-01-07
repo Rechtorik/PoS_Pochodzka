@@ -5,7 +5,6 @@
 #include <dirent.h>
 #include "../common/inputStruktura.h"
 
-// Deklarácie funkcií
 void novaSimulacia(Input* input);
 void pripojenieSa(Input* input);
 void opatovnaSimulacia(Input* input);
@@ -19,7 +18,6 @@ int menu(Input* input) {
 
   while (1) {
     system("clear");
-    // Zobrazenie menu
     printf("\n========== MENU ==========");
     printf("\n1. Nová simulácia\n");
     printf("2. Pripojenie sa na prebiehajúcu simuláciu\n");
@@ -28,14 +26,12 @@ int menu(Input* input) {
     printf("==========================\n");
     printf("Zadajte svoju voľbu: ");
 
-    // Čítanie voľby používateľa
     if (scanf("%d", &choice) != 1) {
       printf("Neplatný vstup! Prosím, zadajte číslo.\n");
       while (getchar() != '\n'); // Vyčistenie bufferu
       continue;
     }
 
-    // Spracovanie voľby
     switch (choice) {
       case 1:
         novaSimulacia(input);
@@ -81,26 +77,18 @@ void novaSimulacia(Input* input) {
 
   if(choice2 == 1) {
     // GENEROVANA MAPA
-    //input->mapaSubor = NULL;
     simulaciaForm(input);
   } else if(choice2 == 2) {
     // MAPA ZO SUBORU
-    //char* buffer = malloc(sizeof(char)*256); // tu sa ulozi cesta k suboru
     system("clear");
     // Zobrazenie menu
     printf("\n========== MENU ==========\n");
     printf("Zadajte názov mapy (.txt): ");
     while (getchar() != '\n'); // Vyčistenie bufferu
-
-    // Čítanie reťazca
     if (fgets(input->mapaSubor, 256, stdin) == NULL) {
       printf("Chyba pri čítaní vstupu.\n");
     }
-
-    //printf("%d\n", strcspn(buffer, "\n"));
-    // Odstránenie znaku nového riadku (ak existuje)
     input->mapaSubor[strcspn(input->mapaSubor, "\n")] = '\0';
-    //input->mapaSubor = buffer;
     simulaciaForm(input);
   } else if(choice2 == 3) {
     // PRAZDNA MAPA
@@ -125,10 +113,6 @@ void koniec() {
 }
 
 
-
-
-
-
 void simulaciaForm(Input* input) {
   int maxX;
   int maxY;
@@ -140,7 +124,6 @@ void simulaciaForm(Input* input) {
   int pocetReplikacii;
   int pripojenie;
   int vykreslenie;
-  //char* suborUlozenia = malloc(sizeof(char)*256);
 
   
   system("clear");
@@ -293,8 +276,6 @@ void simulaciaForm(Input* input) {
 
   system("clear");
   
-  //printf("%d\n", strcspn(suborUlozenia, "\n"));
-  // Odstránenie znaku nového riadku (ak existuje)
   input->suborUlozenia[strcspn(input->suborUlozenia, "\n")] = '\0';
 
   // Tu mám všetky premenné načítané, teraz ich uložiť do štruktúry
@@ -312,27 +293,9 @@ void simulaciaForm(Input* input) {
 }
 
 void opatovneSpustenieForm(Input* input) {
-  //char* suborSoSimulaciou = malloc(sizeof(char)*256);
   int pocetReplikacii;
   int pripojenie;
-  //char* suborUlozenia = malloc(sizeof(char)*256);
  
-   system("clear");
-  // suborSoSimulaciou
-  //printf("\n========== MENU ==========\n");
-  //printf("Zadajte názov simulácie (.txt): ");
-  //while (getchar() != '\n'); // Vyčistenie bufferu
-
-  // Čítanie reťazca
-  //if (fgets(input->suborSoSimulaciou, 256, stdin) == NULL) {
-   // printf("Chyba pri čítaní vstupu.\n");
-  //}
-  //system("clear");
-  
-  //printf("%d\n", strcspn(suborUlozenia, "\n"));
-  // Odstránenie znaku nového riadku (ak existuje)
-  //input->suborSoSimulaciou[strcspn(input->suborSoSimulaciou, "\n")] = '\0';
-
   system("clear");
   // pocetReplikacii
   printf("\n========== MENU ==========");
@@ -370,10 +333,10 @@ void opatovneSpustenieForm(Input* input) {
     const char *input_dir = "../../input_files/";
     struct dirent *entry;
 
-    // Otvorenie adresára /dev/shm
+    // Otvorenie adresára /dev/shm/
     DIR *dir = opendir(input_dir);
     if (dir == NULL) {
-        perror("Nepodarilo sa otvoriť /dev/shm");
+        perror("Nepodarilo sa otvoriť input_files/ \n");
         exit(EXIT_FAILURE);
     }
 
@@ -405,13 +368,9 @@ void opatovneSpustenieForm(Input* input) {
     while (getchar() != '\n'); // Vyčistenie bufferu
   }
   
-  //printf("%d\n", strcspn(suborUlozenia, "\n"));
-  // Odstránenie znaku nového riadku (ak existuje)
   input->suborUlozenia[strcspn(input->suborUlozenia, "\n")] = '\0';
 
   // Tu mám všetky premenné načítané, teraz ich uložiť do štruktúry
-  //input->suborSoSimulaciou = suborSoSimulaciou;
   input->pocetReplikacii = pocetReplikacii;
-  //input->suborUlozenia = suborUlozenia;
   input->pripojenie = pripojenie;
 }
