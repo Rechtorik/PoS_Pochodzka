@@ -22,46 +22,32 @@
 #define SEMAPHORE_KLIENT_NAME "/shared_semaphore_klient_RJ_"
 #define SEMAPHORE_SERVER_NAME "/shared_semaphore_server_RJ_"
 
+typedef struct ProcesPamat{
+  sem_t* semKlient;
+  sem_t* semServer;
+  Vykreslenie_shm* vykreslenie;
+  int owner;
+  int proces_vykreslenie;
+  Input* input;
+}ProcesPamat;
 
-int proces_vykreslenie = 0;
-
-// Funkcia vlákna na ukončenie výstupu
-void *waitForK(void *arg) {
-    Vykreslenie_shm* par = (Vykreslenie_shm*)arg;
-
-    int ch;
-    while (par->end == 0) {  // Pokračuje, kým end nie je 1
-        ch = getchar();
-        if (ch == 'k') {  // Detekcia CTRL+D
-            //if(par->pocetPripojenych > 1) {
-            if(proces_vykreslenie) {
-                //par->pocetPripojenych--;
-                proces_vykreslenie = 0;
-            } else {
-                par->end = 1; // Nastavenie end na 1
-            }
-            break;        // Ukončenie cyklu
-        }
-    }
-
-    pthread_exit(NULL);
-}
-
+#include "workers.c"
 
 int main(int argc, char* argv[]) {
 
   // Input struktura (prazdna)
   Input input;
   memset(&input, 0, sizeof(input));
-
   int menuExit = menu(&input);
-
   if(menuExit) return 0;
 
   // V tomto momente uz mame input z menu
+  ProcesPamat pamat;
+  pamat.input = &input;
+  pamat.proces_vykreslenie = 0;
 
   if(input.pripojenieNaPrebiehajucu) { //                             🔄🔌
-
+    pamat.owner = 0;
     const char *shm_dir = "/dev/shm"; // Adresár pre zdieľanú pamäť
     struct dirent *entry;
 
@@ -115,24 +101,37 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-
+    pamat.vykreslenie = vykreslenie;
     
     if(vykreslenie->pripojenie) {
-        pthread_t thread;
+        pthread_t threadInput;
 
         // Vytvorenie vlákna
-        if (pthread_create(&thread, NULL, waitForK, vykreslenie) != 0) {
+        if (pthread_create(&threadInput, NULL, waitForK, &pamat) != 0) {
             perror("Chyba pri vytváraní vlákna");
             exit(EXIT_FAILURE);
         }
 
-        proces_vykreslenie = 1;
+        pamat.proces_vykreslenie = 1;
+        pthread_t threadVykreslovanie;
+
+        // Vytvorenie vlákna
+        if (pthread_create(&threadVykreslovanie, NULL, vykreslovanie, &pamat) != 0) {
+            perror("Chyba pri vytváraní vlákna");
+            exit(EXIT_FAILURE);
+        }
+        /*
         //vykreslenie->pocetPripojenych++;
         while(proces_vykreslenie && vykreslenie->end == 0) {
-        kresli(vykreslenie, 0);
+        kresli(vykreslenie, pamat.owner);
+        }*/
+        // Čakáme na ukončenie vlákna
+        if (pthread_join(threadInput, NULL) != 0) {
+            perror("Chyba pri čakaní na vlákno");
+            exit(EXIT_FAILURE);
         }
         // Čakáme na ukončenie vlákna
-        if (pthread_join(thread, NULL) != 0) {
+        if (pthread_join(threadVykreslovanie, NULL) != 0) {
             perror("Chyba pri čakaní na vlákno");
             exit(EXIT_FAILURE);
         }
@@ -147,142 +146,48 @@ int main(int argc, char* argv[]) {
     return 0; //                                                      🔄🔌
   }
 
+  // TU ZACINA PROGRAM PRE VYTVARANIE SIMULACIE
 
-  
+  pamat.owner = 1;
 
-  // VYTVORENIE TEXTAKU NA INPUT
+  pthread_t threadInputTextak; // vzdy len jedno vlakno, ale rozdiel co bude robit
+
+  // VYTVORENIE TEXTAKU NA INPUT - VLAKNA
   if(input.opatovneSpustenie == 0) { // NOVA SIMULACIA
-    char cesta[300] = "../../input_files/";
-    strcat(cesta, input.suborUlozenia);
-    FILE *fileInput = fopen(cesta, "w");
-
-    //if (fileInput == NULL) {
-    //    // Ak sa súbor nepodarí otvoriť, vypíše sa chybová hláška
-    //    perror("Chyba pri otváraní súboru");
-    //}
-
-    // Zápis textu do súboru
-    fprintf(fileInput, "%s\n", input.mapaSubor);
-    fprintf(fileInput, "%d\n", input.maxX);
-    fprintf(fileInput, "%d\n", input.maxY);
-    fprintf(fileInput, "%f\n", input.pVpred);
-    fprintf(fileInput, "%f\n", input.pVzad);
-    fprintf(fileInput, "%f\n", input.pVlavo);
-    fprintf(fileInput, "%f\n", input.pVpravo);
-    fprintf(fileInput, "%d\n", input.k);
-    fprintf(fileInput, "%s\n", input.suborUlozenia);
-    fprintf(fileInput, "%d\n", input.pripojenie);
-
-    // Zatvorenie súboru
-    fclose(fileInput);
-
-    // Pokus o vymazanie súboru result
-    char resultFile[256] = "../../result_files/";
-    strcat(resultFile, input.suborUlozenia);
-    remove(resultFile); 
-
+    // Vytvorenie vlákna pre nove spustenie
+    if (pthread_create(&threadInputTextak, NULL, vytvorenieInputFileNovaSimulacia, &pamat) != 0) {
+        perror("Chyba pri vytváraní vlákna");
+        exit(EXIT_FAILURE);
+    }
   } else {  // OPATOVNE SPUSTENIE SIMULACIE
-
-    char cesta[300] = "../../input_files/";
-    strcat(cesta, input.suborUlozenia);
-    FILE *fileInput = fopen(cesta, "r");
-
-    //if (fileInput == NULL) {
-    //    // Ak sa súbor nepodarí otvoriť, vypíše sa chybová hláška
-    //    perror("Chyba pri otváraní súboru");
-    //}
-
-    char buffer[256]; // Buffer na uloženie prečítaného obsahu
-    // Čítanie obsahu riadok po riadku
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    // nazovMapy
-    buffer[strlen(buffer) - 1] = '\0';
-    strcat(input.mapaSubor, buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    // maxX
-    buffer[strlen(buffer) - 1] = '\0';
-    input.maxX = atoi(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //maxY
-    buffer[strlen(buffer) - 1] = '\0';
-    input.maxY = atoi(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //pVpred
-    buffer[strlen(buffer) - 1] = '\0';
-    input.pVpred = atof(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //pVzad
-    buffer[strlen(buffer) - 1] = '\0';
-    input.pVzad = atof(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //pVlavo
-    buffer[strlen(buffer) - 1] = '\0';
-    input.pVlavo = atof(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //pVpravo
-    buffer[strlen(buffer) - 1] = '\0';
-    input.pVpravo = atof(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //k
-    buffer[strlen(buffer) - 1] = '\0';
-    input.k = atoi(buffer);
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //nazov simulacie
-    buffer[strlen(buffer) - 1] = '\0';
-    //input.suborUlozenia = buffer;
-
-    fgets(buffer, sizeof(buffer), fileInput);
-    //pripojenie (0 alebo 1)
-    buffer[strlen(buffer) - 1] = '\0';
-    input.pripojenie = atoi(buffer);
-
-    fclose(fileInput);
+       // Vytvorenie vlákna pre opatovne spustenie
+    if (pthread_create(&threadInputTextak, NULL, vytvorenieInputFileOpatovnaSimulacia, &pamat) != 0) {
+        perror("Chyba pri vytváraní vlákna");
+        exit(EXIT_FAILURE);
+    }
   }
-
-  // debug
-  /*
-  printf("Veľkosť mapy je: %d\n", (input.maxX*2+1) * (input.maxY*2+1));
-  printf("Nazov mapy je: %s \n", input.mapaSubor);
-  printf("Dlzka nazva mapy: %d \n", (int)strlen(input.mapaSubor));
-  printf("Nazov simulacie je: %s \n", input.suborUlozenia);
-  printf("Opatovne spustenie: %d\n", input.opatovneSpustenie);
-  printf("maxX: %d\n", input.maxX);
-  printf("maxY: %d\n", input.maxY);
-  printf("pVpred: %f\n", input.pVpred);
-  printf("pVzad: %f\n", input.pVzad);
-  printf("pVpravo: %f\n", input.pVpravo);
-  printf("pVlavo: %f\n", input.pVlavo);
-  printf("k: %d\n", input.k);
-  printf("pocet replikacii: %d\n", input.pocetReplikacii);
-  printf("mozu sa ostatni pripojit: %d\n", input.pripojenie);
-  printf("Zapnute vykreslenie: %d\n", input.vykreslenie);
-*/
-  
 
   // V tomto momente uz mame naplnenu strukturu isto isto (nacitavanie zo suboru)
   // Uz vieme co ideme robit, len to treba spravit
-
   
+  pthread_t threadDatovodInput;
 
-  // FIFO INPUT vytvorenie
-  // Skontroluj, či FIFO existuje
-    if (access(FIFO_INPUT, F_OK) == -1) {
-        // FIFO neexistuje, pokus o jeho vytvorenie
-        if (mkfifo(FIFO_INPUT, 0666) == -1) {
-            perror("Chyba pri vytváraní FIFO");
-            return 1;
-        }
-    } 
-
+  // Vytvorenie vlákna
+  if (pthread_create(&threadDatovodInput, NULL, vytvorenieDatovoduInput, NULL) != 0) {
+      perror("Chyba pri vytváraní vlákna");
+      exit(EXIT_FAILURE);
+  }
+    
+    // Čakáme na ukončenie vlákna
+    if (pthread_join(threadInputTextak, NULL) != 0) {
+        perror("Chyba pri čakaní na vlákno");
+        exit(EXIT_FAILURE);
+    }
+    // Čakáme na ukončenie vlákna
+    if (pthread_join(threadDatovodInput, NULL) != 0) {
+        perror("Chyba pri čakaní na vlákno");
+        exit(EXIT_FAILURE);
+    }
 
   // spustenie
   int statusServera = system("../server/server &"); // ampersant na to aby bezal server na pozadi
@@ -306,8 +211,15 @@ int main(int argc, char* argv[]) {
   }
 
   close(fd_input);
+
+
+  // ODTIALTO TREBA SYNCHRONIZOVAT - OBA POCESY MAJU INPUT
+
+
+
   
-  usleep(100000); // cakanie pokym server vytvori vykreslenie
+  usleep(100000); // cakanie pokym server vytvori vykreslenie - mutexy sa nachadzaju v shm, ktoru musi vytvorit server
+
     
   // ZDIELANA PAMAT - VYKRESLENIE
   //Otvorenie zdieľanej pamäte
@@ -329,10 +241,10 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
   }
   vykreslenie->pocetPripojenych++;
-  
-  vykreslenie->mapa.maxX = input.maxX;
-  vykreslenie->mapa.maxY = input.maxY;
-  vykreslenie->pocetReplikacii = input.pocetReplikacii;
+  //vykreslenie->mapa.maxX = input.maxX;
+  //vykreslenie->mapa.maxY = input.maxY;
+  //vykreslenie->pocetReplikacii = input.pocetReplikacii;
+  //vykreslenie->pripojenie = input.pripojenie;
   
   char semKlientName[256] = SEMAPHORE_KLIENT_NAME;
   strcat(semKlientName, input.suborUlozenia);
@@ -341,7 +253,13 @@ int main(int argc, char* argv[]) {
   strcat(semServerName, input.suborUlozenia);
   memset(&semServerName[strlen(semServerName) - 4], 0, 4);
 
-  usleep(100000);
+
+
+
+  pthread_mutex_lock(&vykreslenie->mutexSemafory); // cakanie na signal od servera ze semafory su vytvorene
+
+
+
 
   // Pripojenie semaforov
   sem_t *semServer = sem_open(semServerName, 0);
@@ -356,38 +274,56 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
   }
 
+  pamat.semServer = semServer;
+  pamat.semKlient = semKlient;
+  pamat.vykreslenie = vykreslenie;
+
+
+
+  pthread_mutex_unlock(&vykreslenie->mutexSemafory); // odomknutie pre istotu, uz sa pouzivat nebude
+
+
+
 
   if(input.vykreslenie == 1) {
     
-    pthread_t thread;
+    pthread_t threadInput;
 
     // Vytvorenie vlákna
-    if (pthread_create(&thread, NULL, waitForK, vykreslenie) != 0) {
+    if (pthread_create(&threadInput, NULL, waitForK, &pamat) != 0) {
         perror("Chyba pri vytváraní vlákna");
         exit(EXIT_FAILURE);
     }
 
-    
-    usleep(500000);
-    //printf("Vykresluje sa 𓁹‿𓁹\n");
+    pthread_t threadVykreslovanie;
 
-    while(vykreslenie->end == 0) {
-      sem_wait(semKlient);
-      kresli(vykreslenie, 1);
-      usleep(20000);
-      sem_post(semServer);
+    // Vytvorenie vlákna
+    if (pthread_create(&threadVykreslovanie, NULL, vykreslovanie, &pamat) != 0) {
+        perror("Chyba pri vytváraní vlákna");
+        exit(EXIT_FAILURE);
     }
-    //printf("Odišiel som z tohto pekelného loopu\n");
-    
+
     // Čakáme na ukončenie vlákna
-    if (pthread_join(thread, NULL) != 0) {
+    if (pthread_join(threadInput, NULL) != 0) {
+        perror("Chyba pri čakaní na vlákno");
+        exit(EXIT_FAILURE);
+    }
+    // Čakáme na ukončenie vlákna
+    if (pthread_join(threadVykreslovanie, NULL) != 0) {
         perror("Chyba pri čakaní na vlákno");
         exit(EXIT_FAILURE);
     }
       sem_post(semServer); // pre istotu
   }
 
-  usleep(250000);
+
+
+    
+  pthread_mutex_lock(&vykreslenie->mutexResult); // cakanie na vysledky od servera
+
+
+
+
   //NACITANIE VYSLEDKOV (POCTY KOLKO KRAT SA DOSTAL DO STREDU)
     // 1. Otvorenie existujúcej zdieľanej pamäte
     char menoResultu[256] = SHM_RESULT_NAME;
@@ -417,6 +353,12 @@ int main(int argc, char* argv[]) {
         result[i][j] = newResult[(i*(input.maxY*2+1)) + j];
       }
     }
+
+
+
+  pthread_mutex_unlock(&vykreslenie->mutexResult); // odokmkunutie len pre istotu, uz sa pouzivat nebude 
+
+
 
 
     printf("\nPočty úspešných replikácií z %d replikácií:\n", input.pocetReplikacii);
@@ -467,20 +409,25 @@ int main(int argc, char* argv[]) {
     }
   fclose(fileResult);
 
+  // Uvoľnenie zdrojov
   munmap(newResult, resultSize);
   close(shm_result_fd);
-
+  
+  pthread_mutex_destroy(&vykreslenie->mutexSemafory); // znicenie mutexov
+  pthread_mutex_destroy(&vykreslenie->mutexResult);
+ 
   int pocetPripojenych = vykreslenie->pocetPripojenych;
   munmap(vykreslenie, vykreslenieSize);
   close(shm_vykreslenie_fd);
   if(pocetPripojenych == 1) { shm_unlink(menoSimulacie); shm_unlink(menoResultu); }
 
-  // Uvoľnenie zdrojov
   sem_close(semServer);
   sem_unlink(semServerName);
   sem_close(semKlient);
   sem_unlink(semKlientName);
-  
+ 
+ 
+
   printf("Koniec🗿\n");
 
   return 0;

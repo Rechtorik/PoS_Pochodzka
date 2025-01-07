@@ -10,14 +10,14 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
       pocetPrekazok = ((args->maxX*args->maxY)/2);//rand() % ((args->maxX*args->maxY)/2);
   }
 
-     while((napocitavanie < pocetPrekazok) && (pocetPokusov < 10)) {
+     while((napocitavanie < pocetPrekazok) && (pocetPokusov < 20)) {
 
         int prekX = rand() % (2 * args->maxX + 1);
         int prekY = rand() % (2 * args->maxY + 1);
-        printf("Pocet prekazok %d\n", pocetPrekazok);
-        printf("x %d\n", prekX);
-        printf("y %d\n", prekY);
-        printf("napocitavanie %d\n", napocitavanie);
+        //printf("Pocet prekazok %d\n", pocetPrekazok);
+        //printf("x %d\n", prekX);
+        //printf("y %d\n", prekY);
+        //printf("napocitavanie %d\n", napocitavanie);
 
 
      /* while (prekX < 0 || prekX > 2 * args->maxX || prekY < 0 || prekY > 2 * args->maxY) { //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
@@ -31,6 +31,9 @@ void generujMapu(SIMPAM* args, Prekazky* prekazky) {
         // Kontrola okolia
         for (int i = -1; i <= 1; i++) { // kontroluje okolie x //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
             for (int j = -1; j <= 1; j++) { // detto pre y
+
+                //printf("Som tu\n");
+                
 
                 int noveX = prekX + i;
                 int noveY = prekY + j;
