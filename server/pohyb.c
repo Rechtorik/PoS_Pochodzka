@@ -2,7 +2,6 @@ int vyberSmer(void* args){
 
   SIMPAM* input = (SIMPAM*)args;
   float random = (float)rand()/(float)RAND_MAX;
-  //int random = rand()%(input->pVpred + input->pVzad + input->pVlavo + input->pVpravo);
   int volba = 0;
   if(random < input->pVpred){
     // pohne sa vpred
@@ -32,22 +31,22 @@ void zmenPoziciu(SIMPAM *args) {
       newX = args->x;
       newY = args->y;
       // Aktualizácia súradníc na základe smeru
-    if (posun == 1) {  // Posun DOLE (j++) //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
-        newY = (args->y + 1 > 2*args->maxY) ? 0 : args->y + 1;
+    if (posun == 1) {  // Posun DOLE (j++) 
+      newY = (args->y + 1 > 2*args->maxY) ? 0 : args->y + 1;
     } else if (posun == 2) {  // Posun HORE (j--)
-        newY = (args->y - 1 < 0) ? 2*args->maxY : args->y - 1;
+      newY = (args->y - 1 < 0) ? 2*args->maxY : args->y - 1;
     } else if (posun == 3) {  // Posun VLAVO (i--)
-        newX = (args->x - 1 < 0) ? 2*args->maxX : args->x - 1;
+      newX = (args->x - 1 < 0) ? 2*args->maxX : args->x - 1;
     } else if (posun == 4) {  // Posun VPRAVO (i++)
-        newX = (args->x + 1 > 2*args->maxX) ? 0 : args->x + 1;
+      newX = (args->x + 1 > 2*args->maxX) ? 0 : args->x + 1;
     }
-    //🩸🩸🩸🩸🩸🩸
-    // Kontrola, či je nové políčko blokované //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
+    
+    // Kontrola, či je nové políčko blokované 
     if (args->mapa[newY][newX] != 1) {
       ok = true;
     }
   }
-    // Ak pohyb nie je blokovaný, aktualizujeme súradnice //☆.𓋼𓍊 𓆏 𓍊𓋼𓍊.☆
+    // Ak pohyb nie je blokovaný, aktualizujeme súradnice 
     args->x = newX;
     args->y = newY;
 }
